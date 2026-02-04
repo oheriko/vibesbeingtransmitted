@@ -22,6 +22,7 @@ export function loadConfig(): Config {
 		spotify: {
 			clientId: requireEnv("SPOTIFY_CLIENT_ID"),
 			clientSecret: requireEnv("SPOTIFY_CLIENT_SECRET"),
+			redirectUri: process.env.SPOTIFY_REDIRECT_URI,
 		},
 	};
 }

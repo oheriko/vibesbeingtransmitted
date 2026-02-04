@@ -18,6 +18,7 @@
           packages = with (pkgsFor system); [
             biome
             bun
+            cloudflared
             typescript-language-server
           ];
         };

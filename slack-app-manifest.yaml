@@ -1,0 +1,43 @@
+display_information:
+  name: Vibes Being Transmitted
+  description: Share what you're listening to on Spotify with your Slack status
+  background_color: "#1DB954"
+
+features:
+  app_home:
+    home_tab_enabled: true
+    messages_tab_enabled: false
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: Vibes
+    always_online: true
+  slash_commands:
+    - command: /vibes
+      url: https://vibesbeingtransmitted.com/slack/commands
+      description: Manage your Spotify status sharing
+      usage_hint: "[connect | pause | resume | status | disconnect]"
+      should_escape: false
+
+oauth_config:
+  redirect_urls:
+    - https://vibesbeingtransmitted.com/auth/slack
+  scopes:
+    bot:
+      - commands
+      - chat:write
+      - users:read
+    user:
+      - users.profile:read
+      - users.profile:write
+
+settings:
+  event_subscriptions:
+    request_url: https://vibesbeingtransmitted.com/slack/events
+    bot_events:
+      - app_home_opened
+  interactivity:
+    is_enabled: true
+    request_url: https://vibesbeingtransmitted.com/slack/interactions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

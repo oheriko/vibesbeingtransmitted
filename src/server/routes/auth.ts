@@ -113,7 +113,7 @@ auth.get("/spotify", async (c) => {
 		body: new URLSearchParams({
 			grant_type: "authorization_code",
 			code,
-			redirect_uri: `${config.appUrl}/auth/spotify`,
+			redirect_uri: config.spotify.redirectUri || `${config.appUrl}/auth/spotify`,
 		}),
 	});
 
@@ -164,7 +164,7 @@ auth.get("/spotify/start", async (c) => {
 	}
 
 	const scopes = ["user-read-playback-state", "user-read-currently-playing"];
-	const redirectUri = `${config.appUrl}/auth/spotify`;
+	const redirectUri = config.spotify.redirectUri || `${config.appUrl}/auth/spotify`;
 
 	const url = new URL("https://accounts.spotify.com/authorize");
 	url.searchParams.set("client_id", config.spotify.clientId);
