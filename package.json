@@ -1,0 +1,30 @@
+{
+	"name": "vibesbeingtransmitted",
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --hot src/server/index.ts",
+		"build": "bun build ./src/client/index.tsx --outdir ./dist/client --minify",
+		"start": "bun run src/server/index.ts",
+		"test": "bun test",
+		"lint": "biome check .",
+		"format": "biome format --write .",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio"
+	},
+	"dependencies": {
+		"@hono/node-server": "^1.13.7",
+		"drizzle-orm": "^0.38.3",
+		"hono": "^4.6.16",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"drizzle-kit": "^0.30.1"
+	}
+}
