@@ -7,8 +7,8 @@ Vibes Being Transmitted is a Slack app that bridges Spotify and Slack, polling u
 ## System Design
 
 ### Architecture Pattern
-- Pattern: Slack App (event-driven + polling)
-- Rationale: Slack apps require specific interaction patterns; Spotify doesn't push playback events so polling is necessary
+- Pattern: Slack App (event-driven + polling + browser extension)
+- Rationale: Slack apps require specific interaction patterns; Spotify doesn't push playback events so polling is necessary; YouTube Music has no API so a browser extension scrapes the DOM
 
 ### Components
 
@@ -21,6 +21,7 @@ Vibes Being Transmitted is a Slack app that bridges Spotify and Slack, polling u
 │  ├─ GET /auth/spotify       │      ├─ Check Spotify playback │
 │  ├─ POST /slack/events      │      └─ Update Slack status    │
 │  ├─ POST /slack/commands    │                                │
+│  ├─ POST /api/extension/*   │                                │
 │  └─ /api/* (frontend API)   │                                │
 ├──────────────────────────────────────────────────────────────┤
 │  React Frontend (Bun bundled)                                │
@@ -34,7 +35,57 @@ Vibes Being Transmitted is a Slack app that bridges Spotify and Slack, polling u
    │ (Drizzle) │                 │  Spotify  │
    └───────────┘                 │   APIs    │
                                  └───────────┘
+         ▲
+         │
+   ┌───────────────┐
+   │   Browser     │
+   │   Extension   │
+   │  (WXT/React)  │
+   └───────────────┘
 ```
+
+## Infrastructure
+
+### Production Environment
+
+```
+┌─────────────────────────────────────────┐
+│           Hetzner Cloud (fsn1)          │
+│  ┌───────────────────────────────────┐  │
+│  │  cx22 (2 vCPU, 4GB RAM, 40GB SSD) │  │
+│  │  Ubuntu 24.04                      │  │
+│  │  ┌─────────────────────────────┐  │  │
+│  │  │  Caddy (reverse proxy)      │  │  │
+│  │  │  - Auto HTTPS (Let's Encrypt)│  │  │
+│  │  │  - :80/:443 → localhost:3000│  │  │
+│  │  └─────────────────────────────┘  │  │
+│  │  ┌─────────────────────────────┐  │  │
+│  │  │  Bun + Hono App             │  │  │
+│  │  │  - systemd managed          │  │  │
+│  │  │  - /opt/vibes               │  │  │
+│  │  └─────────────────────────────┘  │  │
+│  │  ┌─────────────────────────────┐  │  │
+│  │  │  SQLite                     │  │  │
+│  │  │  - /opt/vibes/vibes.db      │  │  │
+│  │  └─────────────────────────────┘  │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+### Infrastructure Management
+
+All infrastructure is managed via bun scripts using the `hcloud` CLI:
+
+| Script | Purpose |
+|--------|---------|
+| `infra/setup.ts` | Create SSH key, firewall, server with cloud-init |
+| `infra/deploy.ts` | Sync code via rsync, restart systemd service |
+| `infra/ssh.ts` | SSH into server |
+| `infra/status.ts` | Show infrastructure status |
+| `infra/logs.ts` | View service logs |
+| `infra/destroy.ts` | Tear down all resources |
+
+See [deployment.md](deployment.md) for detailed usage.
 
 #### Slack Integration
 - **Purpose:** Update user status, handle app installation, provide App Home and slash commands
@@ -61,6 +112,14 @@ Vibes Being Transmitted is a Slack app that bridges Spotify and Slack, polling u
   - Batch processing (10 users per cycle)
   - Track change detection
   - Error handling with automatic pause after 5 failures
+
+#### Browser Extension (YouTube Music)
+- **Purpose:** Scrape YouTube Music playback state (no official API available)
+- **Technology:** WXT + React (Chrome extension)
+- **Responsibilities:**
+  - Content script monitors YouTube Music DOM for track changes
+  - Background script sends updates to server via extension token
+  - Popup UI for configuration (token, server URL, enable/disable)
 
 ## Technology Stack
 
@@ -218,6 +277,7 @@ src/
 │   ├── routes/
 │   │   ├── auth.ts            # OAuth (Slack + Spotify)
 │   │   ├── slack.ts           # Events, commands, interactions
+│   │   ├── extension.ts       # Browser extension API
 │   │   └── api.ts             # Frontend API
 │   ├── services/
 │   │   ├── slack.ts           # Slack API wrapper
@@ -236,4 +296,27 @@ src/
 └── shared/
     ├── types.ts
     └── format.ts              # Status text formatting
+
+extension/                     # Browser extension (WXT + React)
+├── wxt.config.ts              # WXT configuration
+├── entrypoints/
+│   ├── background.ts          # Background service worker
+│   ├── youtube-music.content.ts  # YouTube Music DOM scraper
+│   └── popup/                 # Extension popup UI
+│       ├── index.html
+│       ├── main.tsx
+│       ├── App.tsx
+│       └── style.css
+└── utils/
+    └── types.ts               # Shared types
+
+infra/                         # Infrastructure scripts (hcloud CLI)
+├── config.ts                  # Server/resource configuration
+├── hcloud.ts                  # hcloud CLI wrapper
+├── setup.ts                   # Create infrastructure
+├── deploy.ts                  # Deploy application
+├── ssh.ts                     # SSH into server
+├── status.ts                  # Show status
+├── logs.ts                    # View logs
+└── destroy.ts                 # Tear down infrastructure
 ```
