@@ -36,6 +36,8 @@ HCLOUD_TOKEN=your-token-here
 
 ## Infrastructure Commands
 
+> **IMPORTANT:** Always use scripts for infrastructure operations. **NEVER run manual commands** (hcloud, ssh, scp) directly. If a fix is needed, update the script first, then run it.
+
 All infrastructure is managed via bun scripts using the hcloud CLI:
 
 | Command | Description |

@@ -30,6 +30,11 @@ This repo uses documentation-as-context to help AI understand the project:
 
 ## Git Workflow
 
+### IMPORTANT: Commit Rules
+
+- **Always commit** when work is complete
+- **NEVER push** - the user will push when ready
+
 ### Commits
 We use [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -56,6 +61,23 @@ Suggest semver bumps based on commits:
 - `feat` → MINOR
 - `fix`, `perf` → PATCH
 - `docs`, `style`, `refactor`, `test`, `chore` → no version bump
+
+## Infrastructure Rules
+
+### IMPORTANT: Scripts Only
+
+- **Always use `bun run infra:*` scripts** for any infrastructure operations
+- **NEVER run manual commands** (hcloud, ssh, scp) directly
+- If a fix is needed, **update the script first**, then run it
+- This ensures all operations are reproducible and documented
+
+Available scripts:
+- `bun run infra:setup` - Create infrastructure
+- `bun run infra:deploy` - Deploy application
+- `bun run infra:status` - Check status (includes DNS/HTTPS)
+- `bun run infra:diagnose` - Debug issues
+- `bun run infra:ssh` - Connect to server
+- `bun run infra:destroy` - Tear down infrastructure
 
 ## Development Guidelines
 
