@@ -104,6 +104,9 @@ auth.get("/spotify", async (c) => {
 	}
 
 	// Exchange code for tokens
+	const redirectUri = config.spotify.redirectUri || `${config.appUrl}/auth/spotify`;
+	console.log("Spotify token exchange - redirect_uri:", redirectUri);
+
 	const response = await fetch("https://accounts.spotify.com/api/token", {
 		method: "POST",
 		headers: {
@@ -113,14 +116,24 @@ auth.get("/spotify", async (c) => {
 		body: new URLSearchParams({
 			grant_type: "authorization_code",
 			code,
-			redirect_uri: config.spotify.redirectUri || `${config.appUrl}/auth/spotify`,
+			redirect_uri: redirectUri,
 		}),
 	});
 
-	const data = (await response.json()) as SpotifyTokenResponse & { error?: string };
+	const responseText = await response.text();
+	console.log("Spotify token response status:", response.status);
+	console.log("Spotify token response:", responseText);
+
+	let data: SpotifyTokenResponse & { error?: string; error_description?: string };
+	try {
+		data = JSON.parse(responseText);
+	} catch {
+		console.error("Failed to parse Spotify response as JSON:", responseText);
+		return c.redirect(`/dashboard?error=${encodeURIComponent("spotify_response_error")}`);
+	}
 
 	if (data.error) {
-		console.error("Spotify OAuth error:", data.error);
+		console.error("Spotify OAuth error:", data.error, data.error_description);
 		return c.redirect(`/dashboard?error=${encodeURIComponent(data.error)}`);
 	}
 

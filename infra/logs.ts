@@ -40,6 +40,8 @@ async function main() {
 			"StrictHostKeyChecking=no",
 			"-o",
 			"UserKnownHostsFile=/dev/null",
+			"-o",
+			"IdentitiesOnly=yes",
 			`${config.deployUser}@${ip}`,
 			`journalctl ${journalctlArgs}`,
 		],

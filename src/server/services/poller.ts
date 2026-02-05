@@ -73,6 +73,7 @@ async function pollBatch(): Promise<void> {
 async function pollUser(user: User): Promise<void> {
 	try {
 		if (!user.spotifyAccessToken) {
+			console.log(`User ${user.id}: No Spotify token`);
 			return;
 		}
 
@@ -82,11 +83,14 @@ async function pollUser(user: User): Promise<void> {
 		const currentTrack = playback?.item ?? null;
 		const currentTrackId = currentTrack?.id ?? null;
 
+		console.log(`User ${user.id}: isPlaying=${isPlaying}, track=${currentTrack?.name || "none"}`);
+
 		// Determine if we need to update Slack status
 		const trackChanged = currentTrackId !== user.lastTrackId;
 		const playingStateChanged = isPlaying !== user.isCurrentlyPlaying;
 
 		if (trackChanged || playingStateChanged) {
+			console.log(`User ${user.id}: Updating status (trackChanged=${trackChanged}, playingStateChanged=${playingStateChanged})`);
 			// Update Slack status
 			const success = await setUserStatus(user, currentTrack, isPlaying);
 
@@ -94,6 +98,7 @@ async function pollUser(user: User): Promise<void> {
 				await incrementErrorCount(user);
 				return;
 			}
+			console.log(`User ${user.id}: Status updated successfully`);
 		}
 
 		// Update user state in database
