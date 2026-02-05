@@ -3,7 +3,8 @@ interface LandingProps {
 }
 
 export function Landing(_props: LandingProps) {
-	const slackAuthUrl = "/auth/slack";
+	const slackAuthUrl =
+		"https://slack.com/oauth/v2/authorize?client_id=1371702621683.10427102988647&scope=commands,chat:write,users:read&user_scope=users.profile:read,users.profile:write";
 
 	return (
 		<div style={styles.page}>
@@ -40,8 +41,14 @@ export function Landing(_props: LandingProps) {
 				<p style={styles.subtitle}>
 					Works with <strong>Spotify</strong> and <strong>YouTube Music</strong>
 				</p>
-				<a href={slackAuthUrl} style={styles.ctaButton}>
-					Add to Slack
+				<a href={slackAuthUrl}>
+					<img
+						alt="Add to Slack"
+						height="40"
+						width="139"
+						src="https://platform.slack-edge.com/img/add_to_slack.png"
+						srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x"
+					/>
 				</a>
 			</header>
 
