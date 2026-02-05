@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <!-- Background -->
+  <rect width="200" height="60" fill="#4b1c4c"/>
+
+  <!-- Top wavy line -->
+  <path d="M 10 15 Q 30 10, 50 15 T 90 15 T 130 15 T 170 15 T 190 15"
+        stroke="white"
+        stroke-width="2"
+        fill="none"/>
+
+  <!-- Middle wavy line -->
+  <path d="M 10 30 Q 30 25, 50 30 T 90 30 T 130 30 T 170 30 T 190 30"
+        stroke="white"
+        stroke-width="2"
+        fill="none"/>
+
+  <!-- Bottom wavy line -->
+  <path d="M 10 45 Q 30 40, 50 45 T 90 45 T 130 45 T 170 45 T 190 45"
+        stroke="white"
+        stroke-width="2"
+        fill="none"/>
+</svg>
