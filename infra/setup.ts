@@ -58,10 +58,13 @@ async function setupSSHKey(): Promise<void> {
 	if (!existsSync(pubKeyPath)) {
 		console.log(`  → Generating new SSH key at ${keyPath}`);
 		// Use Bun.spawn for better control over arguments
-		const proc = Bun.spawn(["ssh-keygen", "-t", "ed25519", "-f", keyPath, "-N", "", "-C", config.sshKeyName], {
-			stdout: "inherit",
-			stderr: "inherit",
-		});
+		const proc = Bun.spawn(
+			["ssh-keygen", "-t", "ed25519", "-f", keyPath, "-N", "", "-C", config.sshKeyName],
+			{
+				stdout: "inherit",
+				stderr: "inherit",
+			}
+		);
 		await proc.exited;
 		if (proc.exitCode !== 0) {
 			throw new Error(`ssh-keygen failed with exit code ${proc.exitCode}`);

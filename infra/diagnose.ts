@@ -47,70 +47,103 @@ async function main() {
 
 	// Check cloud-init status
 	console.log("📋 Cloud-init status:");
-	const statusProc = Bun.spawn([...sshArgs, "cloud-init status --long 2>/dev/null || echo 'cloud-init not available'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const statusProc = Bun.spawn(
+		[...sshArgs, "cloud-init status --long 2>/dev/null || echo 'cloud-init not available'"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const statusOutput = await new Response(statusProc.stdout).text();
 	await statusProc.exited;
 	console.log(statusOutput);
 
 	// Check if bun is installed
 	console.log("\n📋 Bun installation check:");
-	const bunProc = Bun.spawn([...sshArgs, "which bun 2>/dev/null || echo 'bun not in PATH'; ls -la /usr/local/bin/bun 2>/dev/null || echo '/usr/local/bin/bun not found'; ls -la /root/.bun/bin/bun 2>/dev/null || echo '/root/.bun/bin/bun not found'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const bunProc = Bun.spawn(
+		[
+			...sshArgs,
+			"which bun 2>/dev/null || echo 'bun not in PATH'; ls -la /usr/local/bin/bun 2>/dev/null || echo '/usr/local/bin/bun not found'; ls -la /root/.bun/bin/bun 2>/dev/null || echo '/root/.bun/bin/bun not found'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const bunOutput = await new Response(bunProc.stdout).text();
 	await bunProc.exited;
 	console.log(bunOutput);
 
 	// Check cloud-init logs for bun installation
 	console.log("\n📋 Cloud-init log (bun related):");
-	const logProc = Bun.spawn([...sshArgs, "sudo grep -i bun /var/log/cloud-init-output.log 2>/dev/null | tail -20 || echo 'No bun entries found'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const logProc = Bun.spawn(
+		[
+			...sshArgs,
+			"sudo grep -i bun /var/log/cloud-init-output.log 2>/dev/null | tail -20 || echo 'No bun entries found'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const logOutput = await new Response(logProc.stdout).text();
 	await logProc.exited;
 	console.log(logOutput);
 
 	// Check cloud-init errors
 	console.log("\n📋 Cloud-init errors:");
-	const errProc = Bun.spawn([...sshArgs, "sudo grep -i -E '(error|fail|fatal)' /var/log/cloud-init-output.log 2>/dev/null | tail -10 || echo 'No errors found'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const errProc = Bun.spawn(
+		[
+			...sshArgs,
+			"sudo grep -i -E '(error|fail|fatal)' /var/log/cloud-init-output.log 2>/dev/null | tail -10 || echo 'No errors found'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const errOutput = await new Response(errProc.stdout).text();
 	await errProc.exited;
 	console.log(errOutput);
 
 	// Check full runcmd output
 	console.log("\n📋 Full cloud-init output (last 50 lines):");
-	const fullProc = Bun.spawn([...sshArgs, "sudo tail -50 /var/log/cloud-init-output.log 2>/dev/null"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const fullProc = Bun.spawn(
+		[...sshArgs, "sudo tail -50 /var/log/cloud-init-output.log 2>/dev/null"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const fullOutput = await new Response(fullProc.stdout).text();
 	await fullProc.exited;
 	console.log(fullOutput);
 
 	// Check for curl bun.sh output
 	console.log("\n📋 Looking for bun.sh in log:");
-	const bunshProc = Bun.spawn([...sshArgs, "sudo grep -A5 'bun.sh' /var/log/cloud-init-output.log 2>/dev/null || echo 'No bun.sh found in log'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const bunshProc = Bun.spawn(
+		[
+			...sshArgs,
+			"sudo grep -A5 'bun.sh' /var/log/cloud-init-output.log 2>/dev/null || echo 'No bun.sh found in log'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const bunshOutput = await new Response(bunshProc.stdout).text();
 	await bunshProc.exited;
 	console.log(bunshOutput);
 
 	// Check architecture
 	console.log("\n📋 Server architecture:");
-	const archProc = Bun.spawn([...sshArgs, "uname -m && cat /etc/os-release | grep -E '^(NAME|VERSION)='"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const archProc = Bun.spawn(
+		[...sshArgs, "uname -m && cat /etc/os-release | grep -E '^(NAME|VERSION)='"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const archOutput = await new Response(archProc.stdout).text();
 	await archProc.exited;
 	console.log(archOutput);
@@ -147,10 +180,13 @@ async function main() {
 
 	// Check app health endpoint
 	console.log("\n📋 App health check:");
-	const healthProc = Bun.spawn([...sshArgs, "curl -s http://localhost:3000/health 2>&1 || echo 'Health check failed'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const healthProc = Bun.spawn(
+		[...sshArgs, "curl -s http://localhost:3000/health 2>&1 || echo 'Health check failed'"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const healthOutput = await new Response(healthProc.stdout).text();
 	await healthProc.exited;
 	console.log(healthOutput);
@@ -171,40 +207,58 @@ async function main() {
 
 	// Check UFW status
 	console.log("\n🔒 UFW Firewall status:");
-	const ufwProc = Bun.spawn([...sshArgs, "sudo ufw status verbose 2>&1 || echo 'UFW not available'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const ufwProc = Bun.spawn(
+		[...sshArgs, "sudo ufw status verbose 2>&1 || echo 'UFW not available'"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const ufwOutput = await new Response(ufwProc.stdout).text();
 	await ufwProc.exited;
 	console.log(ufwOutput);
 
 	// Check Fail2ban status
 	console.log("\n🔒 Fail2ban status:");
-	const f2bProc = Bun.spawn([...sshArgs, "sudo fail2ban-client status sshd 2>&1 || echo 'Fail2ban not available'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const f2bProc = Bun.spawn(
+		[...sshArgs, "sudo fail2ban-client status sshd 2>&1 || echo 'Fail2ban not available'"],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const f2bOutput = await new Response(f2bProc.stdout).text();
 	await f2bProc.exited;
 	console.log(f2bOutput);
 
 	// Check SSH hardening
 	console.log("\n🔒 SSH hardening check:");
-	const sshProc = Bun.spawn([...sshArgs, "sudo grep -E '^(PermitRootLogin|PasswordAuthentication|AllowUsers)' /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config 2>/dev/null || echo 'SSH config check failed'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const sshProc = Bun.spawn(
+		[
+			...sshArgs,
+			"sudo grep -E '^(PermitRootLogin|PasswordAuthentication|AllowUsers)' /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config 2>/dev/null || echo 'SSH config check failed'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const sshOutput = await new Response(sshProc.stdout).text();
 	await sshProc.exited;
 	console.log(sshOutput);
 
 	// Check unattended-upgrades
 	console.log("\n🔒 Auto-updates status:");
-	const upgradesProc = Bun.spawn([...sshArgs, "sudo systemctl is-active unattended-upgrades 2>&1 && cat /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null || echo 'Auto-updates not configured'"], {
-		stdout: "pipe",
-		stderr: "pipe",
-	});
+	const upgradesProc = Bun.spawn(
+		[
+			...sshArgs,
+			"sudo systemctl is-active unattended-upgrades 2>&1 && cat /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null || echo 'Auto-updates not configured'",
+		],
+		{
+			stdout: "pipe",
+			stderr: "pipe",
+		}
+	);
 	const upgradesOutput = await new Response(upgradesProc.stdout).text();
 	await upgradesProc.exited;
 	console.log(upgradesOutput);

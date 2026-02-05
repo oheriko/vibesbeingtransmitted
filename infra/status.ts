@@ -135,7 +135,9 @@ async function main() {
 		if (resolvedIp) {
 			const matches = serverIp && resolvedIp === serverIp;
 			const icon = matches ? "✓" : "⚠";
-			console.log(`   ${icon} ${label} (${ns}): ${resolvedIp}${matches ? "" : ` (expected ${serverIp})`}`);
+			console.log(
+				`   ${icon} ${label} (${ns}): ${resolvedIp}${matches ? "" : ` (expected ${serverIp})`}`
+			);
 			if (!matches) correctIp = false;
 		} else {
 			console.log(`   ✗ ${label} (${ns}): not resolving`);

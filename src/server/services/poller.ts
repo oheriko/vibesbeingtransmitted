@@ -90,7 +90,9 @@ async function pollUser(user: User): Promise<void> {
 		const playingStateChanged = isPlaying !== user.isCurrentlyPlaying;
 
 		if (trackChanged || playingStateChanged) {
-			console.log(`User ${user.id}: Updating status (trackChanged=${trackChanged}, playingStateChanged=${playingStateChanged})`);
+			console.log(
+				`User ${user.id}: Updating status (trackChanged=${trackChanged}, playingStateChanged=${playingStateChanged})`
+			);
 			// Update Slack status
 			const success = await setUserStatus(user, currentTrack, isPlaying);
 
