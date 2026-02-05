@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
 
-  <!-- Vertical sine wave 1 (left) -->
-  <path d="M 10 4 Q 6 8, 10 12 T 10 20 T 10 28" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Sine wave 1 (top) - more amplitude -->
+  <path d="M 4 10 Q 8 2, 12 10 T 20 10 T 28 10" stroke="white" stroke-width="1" fill="none"/>
 
-  <!-- Vertical sine wave 2 (middle) -->
-  <path d="M 16 4 Q 12 8, 16 12 T 16 20 T 16 28" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Sine wave 2 (middle) - more amplitude -->
+  <path d="M 4 16 Q 8 8, 12 16 T 20 16 T 28 16" stroke="white" stroke-width="1" fill="none"/>
 
-  <!-- Vertical sine wave 3 (right) -->
-  <path d="M 22 4 Q 18 8, 22 12 T 22 20 T 22 28" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Sine wave 3 (bottom) - more amplitude -->
+  <path d="M 4 22 Q 8 14, 12 22 T 20 22 T 28 22" stroke="white" stroke-width="1" fill="none"/>
 </svg>
