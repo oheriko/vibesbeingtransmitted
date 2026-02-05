@@ -77,6 +77,16 @@ async function pollUser(user: User): Promise<void> {
 			return;
 		}
 
+		// Skip Spotify polling if user is actively using YouTube Music extension
+		// (extension updated within last 2 minutes)
+		if (user.lastSource === "youtube-music" && user.lastPolledAt) {
+			const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+			if (user.lastPolledAt > twoMinutesAgo) {
+				console.log(`User ${user.id}: Skipping Spotify poll, using YouTube Music extension`);
+				return;
+			}
+		}
+
 		const playback = await getPlaybackState(user);
 
 		const isPlaying = playback?.is_playing ?? false;
@@ -107,6 +117,7 @@ async function pollUser(user: User): Promise<void> {
 		await db
 			.update(schema.users)
 			.set({
+				lastSource: isPlaying ? "spotify" : null,
 				lastTrackId: currentTrackId,
 				lastTrackName: currentTrack?.name ?? null,
 				lastArtistName: currentTrack?.artists?.[0]?.name ?? null,
