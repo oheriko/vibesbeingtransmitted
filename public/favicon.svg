@@ -2,11 +2,11 @@
   <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
 
   <!-- Wave 1 -->
-  <path d="M 2 8 C 5 8, 7 8, 9 8 C 10 8, 10 2, 12 2 C 14 2, 14 14, 16 14 C 18 14, 18 2, 20 2 C 22 2, 22 8, 24 8 C 26 8, 28 8, 30 8" stroke="white" stroke-width="1" fill="none"/>
+  <path d="M 2 8 C 4 8, 4 2, 7 2 C 10 2, 10 14, 16 14 C 22 14, 22 2, 25 2 C 28 2, 28 8, 30 8" stroke="white" stroke-width="1" fill="none"/>
 
   <!-- Wave 2 -->
-  <path d="M 2 16 C 5 16, 7 16, 9 16 C 10 16, 10 10, 12 10 C 14 10, 14 22, 16 22 C 18 22, 18 10, 20 10 C 22 10, 22 16, 24 16 C 26 16, 28 16, 30 16" stroke="white" stroke-width="1" fill="none"/>
+  <path d="M 2 16 C 4 16, 4 10, 7 10 C 10 10, 10 22, 16 22 C 22 22, 22 10, 25 10 C 28 10, 28 16, 30 16" stroke="white" stroke-width="1" fill="none"/>
 
   <!-- Wave 3 -->
-  <path d="M 2 24 C 5 24, 7 24, 9 24 C 10 24, 10 18, 12 18 C 14 18, 14 30, 16 30 C 18 30, 18 18, 20 18 C 22 18, 22 24, 24 24 C 26 24, 28 24, 30 24" stroke="white" stroke-width="1" fill="none"/>
+  <path d="M 2 24 C 4 24, 4 18, 7 18 C 10 18, 10 30, 16 30 C 22 30, 22 18, 25 18 C 28 18, 28 24, 30 24" stroke="white" stroke-width="1" fill="none"/>
 </svg>
