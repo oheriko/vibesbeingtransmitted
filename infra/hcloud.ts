@@ -1,5 +1,7 @@
 /**
  * Wrapper for hcloud CLI commands
+ *
+ * Uses HCLOUD_TOKEN from .env (hcloud CLI reads this natively)
  */
 
 import { $ } from "bun";
@@ -47,13 +49,12 @@ export async function checkHcloud(): Promise<boolean> {
 	}
 	console.log(`hcloud version: ${result.data}`);
 
-	// Check if context is configured
-	const context = await hcloud(["context", "active"]);
-	if (!context.success || !context.data) {
-		console.error("No hcloud context configured. Run: hcloud context create vibes");
+	// Check for API token
+	if (!process.env.HCLOUD_TOKEN) {
+		console.error("HCLOUD_TOKEN not set. Add it to your .env file.");
 		return false;
 	}
-	console.log(`Active context: ${context.data}`);
+	console.log("Using HCLOUD_TOKEN from environment");
 
 	return true;
 }

@@ -27,11 +27,11 @@ brew install hcloud
 3. Go to Security → API Tokens
 4. Generate a new token with Read & Write permissions
 
-### 3. Configure hcloud
+### 3. Add Token to .env
 
 ```bash
-hcloud context create vibes
-# Paste your API token when prompted
+# In your .env file
+HCLOUD_TOKEN=your-token-here
 ```
 
 ## Infrastructure Commands
