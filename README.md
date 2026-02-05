@@ -1,15 +1,34 @@
 # Vibes Being Transmitted
 
-A Slack app that shares what you're listening to on Spotify with your teammates via your Slack status.
+**[vibesbeingtransmitted.com](https://www.vibesbeingtransmitted.com)**
+
+A Slack app that shares what you're listening to on Spotify or YouTube Music with your teammates via your Slack status.
 
 ## Features
 
-- Automatic Slack status updates when playing music on Spotify
+- Automatic Slack status updates when playing music
+- **Spotify** - native integration, polls every 5 seconds
+- **YouTube Music** - via browser extension
 - `/vibes` slash command for quick controls
-- App Home tab with connection status and toggle
-- Privacy controls - pause/resume sharing anytime
+- App Home tab with connection status and controls
+- Privacy-first - only current track is shared, nothing stored
 
-## Quick Start
+## Install
+
+1. Visit [vibesbeingtransmitted.com](https://www.vibesbeingtransmitted.com)
+2. Click "Add to Slack"
+3. Connect Spotify and/or install the YouTube Music extension
+
+## Browser Extension
+
+For YouTube Music support, install the browser extension:
+
+- **Chrome/Edge**: Download from the site, unzip, load unpacked at `chrome://extensions`
+- **Firefox**: Download from the site, load temporary add-on at `about:debugging`
+
+Get your extension token via `/vibes token` in Slack.
+
+## Development
 
 ```bash
 # Install dependencies
@@ -22,72 +41,41 @@ cp .env.example .env
 bun run dev
 ```
 
-## Setup
+### Environment Variables
 
-### 1. Create Slack App
-
-Use the included manifest to create your Slack app:
-
-1. Go to https://api.slack.com/apps
-2. Click "Create New App" → "From a manifest"
-3. Select your workspace
-4. Paste contents of `slack-app-manifest.yaml`
-5. Create and install the app
-6. Copy credentials to `.env`:
-   - `SLACK_CLIENT_ID`
-   - `SLACK_CLIENT_SECRET`
-   - `SLACK_SIGNING_SECRET`
-
-### 2. Create Spotify App
-
-1. Go to https://developer.spotify.com/dashboard
-2. Create an app
-3. Add redirect URI: `https://www.vibesbeingtransmitted.com/auth/spotify`
-4. Copy credentials to `.env`:
-   - `SPOTIFY_CLIENT_ID`
-   - `SPOTIFY_CLIENT_SECRET`
-
-### 3. Generate Encryption Key
-
-```bash
-openssl rand -hex 32
+```
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+SLACK_SIGNING_SECRET=
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+ENCRYPTION_KEY=  # openssl rand -hex 32
 ```
 
-Add to `.env` as `ENCRYPTION_KEY`.
-
-### 4. Local Development
-
-For local dev, you need a tunnel for Slack while Spotify can use localhost:
-
-```bash
-# Terminal 1: Start server
-bun run dev
-
-# Terminal 2: Start tunnel
-cloudflared tunnel --url http://localhost:3000
-```
-
-Update your Slack app URLs to the tunnel URL, and add to `.env`:
-```
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/auth/spotify
-```
-
-## Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
 | `bun run dev` | Start development server with hot reload |
 | `bun run build` | Build frontend for production |
 | `bun run start` | Start production server |
-| `bun run lint` | Run Biome linter |
-| `bun run format` | Format code with Biome |
+| `bun run build:extension` | Build browser extensions |
+| `bun run infra:deploy` | Deploy to production |
+
+## Tech Stack
+
+- **Runtime**: Bun
+- **Backend**: Hono
+- **Frontend**: React
+- **Database**: SQLite + Drizzle ORM
+- **Extension**: WXT framework
+- **Hosting**: Hetzner Cloud
 
 ## Documentation
 
-- **[docs/architecture.md](docs/architecture.md)** - Technical design and system architecture
-- **[docs/requirements.md](docs/requirements.md)** - Business requirements
-- **[docs/constraints.md](docs/constraints.md)** - Technical constraints
-- **[docs/llm.md](docs/llm.md)** - Guide for AI coding assistants
+- [docs/architecture.md](docs/architecture.md) - Technical design
+- [docs/requirements.md](docs/requirements.md) - Business requirements
+- [docs/llm.md](docs/llm.md) - Guide for AI coding assistants
 
 ## License
 
