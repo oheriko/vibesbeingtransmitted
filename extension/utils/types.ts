@@ -19,7 +19,7 @@ export interface ExtensionConfig {
 
 export const DEFAULT_CONFIG: ExtensionConfig = {
 	apiToken: "",
-	serverUrl: "https://vibesbeingtransmitted.com",
+	serverUrl: "https://www.vibesbeingtransmitted.com",
 	enabled: true,
 };
 

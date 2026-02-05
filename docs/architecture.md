@@ -238,7 +238,7 @@ GET  /api/spotify/connect-url # Get Spotify OAuth URL
 ### Environment Variables
 
 ```bash
-APP_URL=https://vibesbeingtransmitted.com
+APP_URL=https://www.vibesbeingtransmitted.com
 PORT=3000
 DATABASE_PATH=./vibes.db
 ENCRYPTION_KEY=<32-byte-hex>

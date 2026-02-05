@@ -120,7 +120,7 @@ ${serviceFile}SVCEOF"`;
 	console.log(`  ✓ Service status: ${status.trim()}\n`);
 
 	console.log("✅ Deployment complete!");
-	console.log(`\nApp running at: https://vibesbeingtransmitted.com`);
+	console.log(`\nApp running at: https://www.vibesbeingtransmitted.com`);
 	console.log(`(Caddy handles SSL automatically)`);
 }
 

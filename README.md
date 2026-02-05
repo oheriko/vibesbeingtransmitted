@@ -42,7 +42,7 @@ Use the included manifest to create your Slack app:
 
 1. Go to https://developer.spotify.com/dashboard
 2. Create an app
-3. Add redirect URI: `https://vibesbeingtransmitted.com/auth/spotify`
+3. Add redirect URI: `https://www.vibesbeingtransmitted.com/auth/spotify`
 4. Copy credentials to `.env`:
    - `SPOTIFY_CLIENT_ID`
    - `SPOTIFY_CLIENT_SECRET`

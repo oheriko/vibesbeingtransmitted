@@ -13,14 +13,14 @@ features:
     always_online: true
   slash_commands:
     - command: /vibes
-      url: https://vibesbeingtransmitted.com/slack/commands
+      url: https://www.vibesbeingtransmitted.com/slack/commands
       description: Manage your Spotify status sharing
       usage_hint: "[connect | pause | resume | status | disconnect]"
       should_escape: false
 
 oauth_config:
   redirect_urls:
-    - https://vibesbeingtransmitted.com/auth/slack
+    - https://www.vibesbeingtransmitted.com/auth/slack
   scopes:
     bot:
       - commands
@@ -32,12 +32,12 @@ oauth_config:
 
 settings:
   event_subscriptions:
-    request_url: https://vibesbeingtransmitted.com/slack/events
+    request_url: https://www.vibesbeingtransmitted.com/slack/events
     bot_events:
       - app_home_opened
   interactivity:
     is_enabled: true
-    request_url: https://vibesbeingtransmitted.com/slack/interactions
+    request_url: https://www.vibesbeingtransmitted.com/slack/interactions
   org_deploy_enabled: false
   socket_mode_enabled: false
   token_rotation_enabled: false

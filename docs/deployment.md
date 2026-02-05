@@ -76,7 +76,7 @@ bun run infra:ssh
 cat > /opt/vibes/.env << 'EOF'
 NODE_ENV=production
 PORT=3000
-APP_URL=https://vibesbeingtransmitted.com
+APP_URL=https://www.vibesbeingtransmitted.com
 DATABASE_PATH=/opt/vibes/vibes.db
 ENCRYPTION_KEY=<generate-32-byte-hex>
 
@@ -105,7 +105,7 @@ This:
 
 ### 4. Verify
 
-- Visit https://vibesbeingtransmitted.com
+- Visit https://www.vibesbeingtransmitted.com
 - Check logs: `bun run infra:logs -f`
 
 ## Server Details
@@ -126,7 +126,7 @@ Caddy automatically provisions and renews SSL certificates via Let's Encrypt.
 
 Default Caddyfile:
 ```
-vibesbeingtransmitted.com {
+www.vibesbeingtransmitted.com {
     reverse_proxy localhost:3000
 }
 ```
@@ -153,8 +153,8 @@ bun run infra:deploy
 Point your domain to the server IP:
 
 ```
-A    vibesbeingtransmitted.com    <server-ipv4>
-AAAA vibesbeingtransmitted.com    <server-ipv6>
+A    www.vibesbeingtransmitted.com    <server-ipv4>
+AAAA www.vibesbeingtransmitted.com    <server-ipv6>
 ```
 
 Get the IP: `bun run infra:status`
