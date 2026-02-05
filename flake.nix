@@ -19,6 +19,7 @@
             biome
             bun
             cloudflared
+            hcloud
             typescript-language-server
           ];
         };
