@@ -6,3 +6,12 @@ node_modules
 *.db
 *.db-shm
 *.db-wal
+
+# WXT extension build outputs
+extension/.output
+extension/.wxt
+extension/.plasmo
+extension/node_modules
+
+# Claude local settings
+.claude

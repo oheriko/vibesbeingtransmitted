@@ -59,10 +59,12 @@ slack.post("/commands", verifySlackRequest, async (c) => {
 			return handleStatusCommand(c, userId);
 		case "disconnect":
 			return handleDisconnectCommand(c, userId);
+		case "token":
+			return handleTokenCommand(c, userId);
 		default:
 			return c.json({
 				response_type: "ephemeral",
-				text: "*Vibes Being Transmitted* 🎵\n\nCommands:\n• `/vibes connect` - Connect your Spotify account\n• `/vibes pause` - Pause status sharing\n• `/vibes resume` - Resume status sharing\n• `/vibes status` - Check your current status\n• `/vibes disconnect` - Disconnect Spotify",
+				text: "*Vibes Being Transmitted* 🎵\n\nCommands:\n• `/vibes connect` - Connect Spotify\n• `/vibes token` - Get token for browser extension (YouTube Music)\n• `/vibes pause` - Pause status sharing\n• `/vibes resume` - Resume status sharing\n• `/vibes status` - Check your current status\n• `/vibes disconnect` - Disconnect services",
 			});
 	}
 });
@@ -252,6 +254,31 @@ async function handleDisconnectCommand(c: Context<Env>, userId: string) {
 	return c.json({
 		response_type: "ephemeral",
 		text: "🔌 Spotify disconnected. Your status will no longer update.",
+	});
+}
+
+async function handleTokenCommand(c: Context<Env>, userId: string) {
+	const user = await db.query.users.findFirst({
+		where: eq(schema.users.id, userId),
+	});
+
+	if (!user) {
+		return c.json({
+			response_type: "ephemeral",
+			text: "Please install the app first by visiting your App Home tab.",
+		});
+	}
+
+	// Generate a new token if user doesn't have one
+	let token = user.extensionToken;
+	if (!token) {
+		token = crypto.randomUUID();
+		await db.update(schema.users).set({ extensionToken: token }).where(eq(schema.users.id, userId));
+	}
+
+	return c.json({
+		response_type: "ephemeral",
+		text: `🔑 *Your Extension Token*\n\n\`${token}\`\n\nPaste this into the Vibes browser extension to connect YouTube Music.\n\n_Keep this token secret - anyone with it can update your status._`,
 	});
 }
 

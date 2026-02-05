@@ -16,10 +16,15 @@ export const users = sqliteTable("users", {
 		.notNull()
 		.references(() => workspaces.id, { onDelete: "cascade" }),
 	slackAccessToken: text("slack_access_token").notNull(), // Encrypted - user token for status updates
+	// Spotify OAuth
 	spotifyAccessToken: text("spotify_access_token"), // Encrypted
 	spotifyRefreshToken: text("spotify_refresh_token"), // Encrypted
 	spotifyExpiresAt: integer("spotify_expires_at", { mode: "timestamp" }),
+	// Extension token (for YouTube Music, etc.)
+	extensionToken: text("extension_token"), // Plain text - used to auth extension
+	// Status
 	isSharing: integer("is_sharing", { mode: "boolean" }).notNull().default(false),
+	lastSource: text("last_source"), // 'spotify' | 'youtube-music' | null
 	lastTrackId: text("last_track_id"),
 	lastTrackName: text("last_track_name"),
 	lastArtistName: text("last_artist_name"),

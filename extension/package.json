@@ -1,0 +1,27 @@
+{
+	"name": "vibes-extension",
+	"displayName": "Vibes Being Transmitted",
+	"version": "0.1.0",
+	"description": "Share what you're listening to on YouTube Music with your Slack status",
+	"type": "module",
+	"scripts": {
+		"dev": "wxt",
+		"dev:firefox": "wxt -b firefox",
+		"build": "wxt build",
+		"build:firefox": "wxt build -b firefox",
+		"zip": "wxt zip",
+		"zip:firefox": "wxt zip -b firefox",
+		"postinstall": "wxt prepare"
+	},
+	"dependencies": {
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"devDependencies": {
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"@wxt-dev/module-react": "^1.1.0",
+		"typescript": "^5.7.2",
+		"wxt": "^0.19.0"
+	}
+}

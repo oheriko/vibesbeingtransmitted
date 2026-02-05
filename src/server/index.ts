@@ -6,6 +6,7 @@ import { logger } from "hono/logger";
 import { config } from "./config";
 import { api } from "./routes/api";
 import { auth } from "./routes/auth";
+import { extension } from "./routes/extension";
 import { slack } from "./routes/slack";
 import { startPoller } from "./services/poller";
 
@@ -21,7 +22,7 @@ app.use("*", logger());
 app.use(
 	"/api/*",
 	cors({
-		origin: config.appUrl,
+		origin: "*", // Allow extension requests from any origin
 		credentials: true,
 	})
 );
@@ -33,6 +34,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.route("/auth", auth);
 app.route("/slack", slack);
 app.route("/api", api);
+app.route("/api/extension", extension);
 
 // Serve static files from dist/client for production
 app.use("/*", serveStatic({ root: "./dist/client" }));

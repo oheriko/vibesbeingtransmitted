@@ -5,6 +5,16 @@
 
 This document explains how to effectively use AI coding assistants with this repository.
 
+## IMPORTANT: Native Dependencies Fix
+
+**When building the browser extension or running commands that use native Node modules (sharp, lmdb, etc.), you MUST prefix with:**
+
+```bash
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 bun run build
+```
+
+This is required on this NixOS system because native modules need the system's libstdc++.
+
 ## Documentation Structure
 
 This repo uses documentation-as-context to help AI understand the project:

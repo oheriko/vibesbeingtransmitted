@@ -28,7 +28,9 @@ export function initializeDatabase(): void {
 			spotify_access_token TEXT,
 			spotify_refresh_token TEXT,
 			spotify_expires_at INTEGER,
+			extension_token TEXT,
 			is_sharing INTEGER NOT NULL DEFAULT 0,
+			last_source TEXT,
 			last_track_id TEXT,
 			last_track_name TEXT,
 			last_artist_name TEXT,
@@ -45,9 +47,22 @@ export function initializeDatabase(): void {
 
 		CREATE INDEX IF NOT EXISTS idx_users_workspace ON users(workspace_id);
 		CREATE INDEX IF NOT EXISTS idx_users_sharing ON users(is_sharing) WHERE is_sharing = 1;
+		CREATE INDEX IF NOT EXISTS idx_users_extension_token ON users(extension_token);
 		CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 		CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 	`);
+
+	// Migrations for existing databases
+	try {
+		sqlite.exec(`ALTER TABLE users ADD COLUMN extension_token TEXT`);
+	} catch {
+		// Column already exists
+	}
+	try {
+		sqlite.exec(`ALTER TABLE users ADD COLUMN last_source TEXT`);
+	} catch {
+		// Column already exists
+	}
 }
 
 export { schema };
