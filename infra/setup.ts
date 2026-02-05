@@ -333,7 +333,7 @@ runcmd:
   # Configure Caddy for reverse proxy (after installation)
   - |
     cat > /etc/caddy/Caddyfile << 'EOF'
-    vibesbeingtransmitted.com {
+    www.vibesbeingtransmitted.com {
         reverse_proxy localhost:3000
     }
     EOF

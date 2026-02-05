@@ -9,7 +9,7 @@ import { homedir } from "node:os";
 import { config } from "./config";
 import { checkHcloud, getFirewall, getServer, getSSHKey } from "./hcloud";
 
-const DOMAIN = "vibesbeingtransmitted.com";
+const DOMAIN = "www.vibesbeingtransmitted.com";
 
 async function checkDns(nameserver: string, label: string): Promise<string | null> {
 	try {
