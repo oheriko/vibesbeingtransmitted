@@ -100,9 +100,11 @@ Available scripts:
 - `bun run` for scripts
 - `bun test` for testing
 
-**Language:**
+**Language & Tooling:**
 - TypeScript (strict mode)
-- Biome for linting and formatting
+- **Only use Bun and Biome** for TypeScript - no tsc, eslint, prettier, etc.
+- `bun run lint` - check for errors (biome check)
+- `bun run format` - fix formatting (biome format)
 
 **Testing:**
 - Use `bun:test` exclusively
