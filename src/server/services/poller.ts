@@ -4,9 +4,9 @@ import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { clearUserStatus, setUserStatus } from "./slack";
 import { getPlaybackState } from "./spotify";
 
-const POLL_INTERVAL_MS = 15_000; // 15 seconds
+const POLL_INTERVAL_MS = 5_000; // 5 seconds
 const BATCH_SIZE = 10;
-const MIN_USER_POLL_INTERVAL_MS = 30_000; // 30 seconds per user
+const MIN_USER_POLL_INTERVAL_MS = 5_000; // 5 seconds per user
 const MAX_ERROR_COUNT = 5;
 
 let isRunning = false;
@@ -77,19 +77,20 @@ async function pollUser(user: User): Promise<void> {
 			return;
 		}
 
+		const playback = await getPlaybackState(user);
+		const spotifyIsPlaying = playback?.is_playing ?? false;
+
 		// Skip Spotify polling if user is actively using YouTube Music extension
-		// (extension updated within last 2 minutes)
-		if (user.lastSource === "youtube-music" && user.lastPolledAt) {
+		// (extension updated within last 2 minutes) AND Spotify isn't playing
+		if (!spotifyIsPlaying && user.lastSource === "youtube-music" && user.lastPolledAt) {
 			const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
 			if (user.lastPolledAt > twoMinutesAgo) {
-				console.log(`User ${user.id}: Skipping Spotify poll, using YouTube Music extension`);
+				console.log(`User ${user.id}: Skipping, YouTube Music active and Spotify not playing`);
 				return;
 			}
 		}
 
-		const playback = await getPlaybackState(user);
-
-		const isPlaying = playback?.is_playing ?? false;
+		const isPlaying = spotifyIsPlaying;
 		const currentTrack = playback?.item ?? null;
 		const currentTrackId = currentTrack?.id ?? null;
 
