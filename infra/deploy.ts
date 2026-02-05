@@ -80,6 +80,8 @@ async function main() {
 	await $`ssh ${sshOpts.split(" ")} ${remote} "cd ${REMOTE_DIR} && bun install"`;
 	console.log("  ✓ Dependencies installed\n");
 
+	// Note: Database migrations run automatically on app startup via initializeDatabase()
+
 	// Step 4: Stop any existing vibes processes
 	console.log("🛑 Step 4: Stopping existing processes");
 	await $`ssh ${sshOpts.split(" ")} ${remote} "sudo systemctl stop vibes 2>/dev/null || true; pkill -f 'bun.*vibes' 2>/dev/null || true; sleep 1"`.nothrow();
