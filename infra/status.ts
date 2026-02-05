@@ -9,6 +9,39 @@ import { homedir } from "node:os";
 import { config } from "./config";
 import { checkHcloud, getFirewall, getServer, getSSHKey } from "./hcloud";
 
+const DOMAIN = "vibesbeingtransmitted.com";
+
+async function checkDns(nameserver: string, label: string): Promise<string | null> {
+	try {
+		const proc = Bun.spawn(["dig", `@${nameserver}`, DOMAIN, "+short", "+time=2", "+tries=1"], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const output = await new Response(proc.stdout).text();
+		await proc.exited;
+		const ip = output.trim().split("\n")[0];
+		return ip || null;
+	} catch {
+		return null;
+	}
+}
+
+async function checkHttps(): Promise<{ status: number; redirect?: string } | null> {
+	try {
+		const proc = Bun.spawn(["curl", "-sI", "--max-time", "5", `https://${DOMAIN}/health`], {
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const output = await new Response(proc.stdout).text();
+		await proc.exited;
+		const statusMatch = output.match(/HTTP\/\d\.?\d?\s+(\d+)/);
+		const status = statusMatch ? parseInt(statusMatch[1]) : 0;
+		return { status };
+	} catch {
+		return null;
+	}
+}
+
 async function main() {
 	console.log("📊 Hetzner Cloud Infrastructure Status\n");
 
@@ -82,6 +115,52 @@ async function main() {
 		}
 	} else {
 		console.log(`\n🖥️  Server: Not found`);
+	}
+
+	// DNS Status
+	console.log(`\n🌐 DNS Status for ${DOMAIN}:`);
+	const serverIp = server?.public_net.ipv4.ip;
+
+	const dnsChecks = [
+		{ ns: "8.8.8.8", label: "Google" },
+		{ ns: "1.1.1.1", label: "Cloudflare" },
+		{ ns: "9.9.9.9", label: "Quad9" },
+	];
+
+	let allResolved = true;
+	let correctIp = true;
+
+	for (const { ns, label } of dnsChecks) {
+		const resolvedIp = await checkDns(ns, label);
+		if (resolvedIp) {
+			const matches = serverIp && resolvedIp === serverIp;
+			const icon = matches ? "✓" : "⚠";
+			console.log(`   ${icon} ${label} (${ns}): ${resolvedIp}${matches ? "" : ` (expected ${serverIp})`}`);
+			if (!matches) correctIp = false;
+		} else {
+			console.log(`   ✗ ${label} (${ns}): not resolving`);
+			allResolved = false;
+		}
+	}
+
+	// HTTPS check (only if DNS is resolving)
+	if (allResolved && correctIp) {
+		console.log(`\n🔒 HTTPS Status:`);
+		const https = await checkHttps();
+		if (https) {
+			if (https.status === 200) {
+				console.log(`   ✓ https://${DOMAIN} is live (HTTP ${https.status})`);
+			} else if (https.status >= 300 && https.status < 400) {
+				console.log(`   → https://${DOMAIN} redirecting (HTTP ${https.status})`);
+			} else {
+				console.log(`   ⚠ https://${DOMAIN} returned HTTP ${https.status}`);
+			}
+		} else {
+			console.log(`   ✗ https://${DOMAIN} not responding (SSL cert may be provisioning)`);
+		}
+	} else if (!allResolved) {
+		console.log(`\n🔒 HTTPS Status:`);
+		console.log(`   ⏳ Waiting for DNS propagation before SSL can be provisioned`);
 	}
 
 	console.log("");
