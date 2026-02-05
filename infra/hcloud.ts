@@ -96,25 +96,25 @@ export interface HcloudFirewall {
  * Get server by name
  */
 export async function getServer(name: string): Promise<HcloudServer | null> {
-	const result = await hcloudJson<HcloudServer[]>(["server", "list", "--name", name]);
+	const result = await hcloudJson<HcloudServer[]>(["server", "list"]);
 	if (!result.success || !result.data?.length) return null;
-	return result.data[0];
+	return result.data.find((s) => s.name === name) ?? null;
 }
 
 /**
  * Get SSH key by name
  */
 export async function getSSHKey(name: string): Promise<HcloudSSHKey | null> {
-	const result = await hcloudJson<HcloudSSHKey[]>(["ssh-key", "list", "--name", name]);
+	const result = await hcloudJson<HcloudSSHKey[]>(["ssh-key", "list"]);
 	if (!result.success || !result.data?.length) return null;
-	return result.data[0];
+	return result.data.find((k) => k.name === name) ?? null;
 }
 
 /**
  * Get firewall by name
  */
 export async function getFirewall(name: string): Promise<HcloudFirewall | null> {
-	const result = await hcloudJson<HcloudFirewall[]>(["firewall", "list", "--name", name]);
+	const result = await hcloudJson<HcloudFirewall[]>(["firewall", "list"]);
 	if (!result.success || !result.data?.length) return null;
-	return result.data[0];
+	return result.data.find((f) => f.name === name) ?? null;
 }

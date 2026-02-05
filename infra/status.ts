@@ -5,6 +5,7 @@
  * Usage: bun run infra:status
  */
 
+import { homedir } from "node:os";
 import { config } from "./config";
 import { checkHcloud, getFirewall, getServer, getSSHKey } from "./hcloud";
 
@@ -47,6 +48,36 @@ async function main() {
 		console.log(`   Type: ${server.server_type.name}`);
 		console.log(`   Location: ${server.datacenter.name}`);
 		console.log(`   Image: ${server.image?.name || "unknown"}`);
+
+		// Check cloud-init status via SSH
+		if (server.status === "running") {
+			const keyPath = config.sshKeyPath.replace("~", homedir());
+			const ip = server.public_net.ipv4.ip;
+			try {
+				const proc = Bun.spawn(
+					[
+						"ssh",
+						"-i",
+						keyPath,
+						"-o",
+						"StrictHostKeyChecking=no",
+						"-o",
+						"UserKnownHostsFile=/dev/null",
+						"-o",
+						"ConnectTimeout=5",
+						`${config.deployUser}@${ip}`,
+						"cloud-init status 2>/dev/null || echo 'unknown'",
+					],
+					{ stdout: "pipe", stderr: "pipe" }
+				);
+				const output = await new Response(proc.stdout).text();
+				await proc.exited;
+				const status = output.trim();
+				console.log(`   Cloud-init: ${status}`);
+			} catch {
+				console.log(`   Cloud-init: (unable to connect)`);
+			}
+		}
 	} else {
 		console.log(`\n🖥️  Server: Not found`);
 	}

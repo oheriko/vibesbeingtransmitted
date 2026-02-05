@@ -10,7 +10,7 @@ export const config = {
 	sshKeyName: "vibes-deploy",
 
 	// Server specs
-	serverType: "cx22", // 2 vCPU, 4GB RAM, 40GB SSD - good for small apps
+	serverType: "cax21", // ARM: 4 vCPU, 8GB RAM, 80GB SSD
 	image: "ubuntu-24.04",
 	location: "fsn1", // Falkenstein, Germany
 

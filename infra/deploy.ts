@@ -7,6 +7,7 @@
  * Usage: bun run infra:deploy
  */
 
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { $ } from "bun";
 import { config } from "./config";
@@ -64,18 +65,51 @@ async function main() {
 	await $`rsync -avz --delete ${excludeArgs.split(" ")} -e "ssh ${sshOpts.split(" ")}" ${projectRoot}/ ${remote}:${REMOTE_DIR}/`;
 	console.log("  ✓ Files synced\n");
 
+	// Step 2b: Upload .env file if it exists locally
+	const localEnvPath = `${projectRoot}/.env`;
+	if (existsSync(localEnvPath)) {
+		console.log("📤 Step 2b: Uploading .env file");
+		await $`scp ${sshOpts.split(" ")} ${localEnvPath} ${remote}:${REMOTE_DIR}/.env`;
+		console.log("  ✓ .env file uploaded\n");
+	} else {
+		console.log("⚠️  No local .env file found - service may fail without environment variables\n");
+	}
+
 	// Step 3: Install dependencies on server
 	console.log("📥 Step 3: Installing dependencies");
-	await $`ssh ${sshOpts.split(" ")} ${remote} "cd ${REMOTE_DIR} && bun install --production"`;
+	await $`ssh ${sshOpts.split(" ")} ${remote} "cd ${REMOTE_DIR} && bun install"`;
 	console.log("  ✓ Dependencies installed\n");
 
-	// Step 4: Run database migrations (if needed)
-	console.log("🗄️  Step 4: Database setup");
-	await $`ssh ${sshOpts.split(" ")} ${remote} "cd ${REMOTE_DIR} && bun run src/server/index.ts &>/dev/null & sleep 2 && kill $!"`.nothrow();
-	console.log("  ✓ Database initialized\n");
+	// Step 4: Stop any existing vibes processes
+	console.log("🛑 Step 4: Stopping existing processes");
+	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl stop vibes 2>/dev/null || true; pkill -f 'bun.*vibes' 2>/dev/null || true; sleep 1"`.nothrow();
+	console.log("  ✓ Existing processes stopped\n");
 
-	// Step 5: Restart service
-	console.log("🔄 Step 5: Restarting service");
+	// Step 5: Update and restart service
+	console.log("🔄 Step 5: Updating systemd service");
+	const serviceFile = `[Unit]
+Description=Vibes Being Transmitted
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vibes
+ExecStart=/usr/local/bin/bun run start
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=-/opt/vibes/.env
+
+[Install]
+WantedBy=multi-user.target
+`;
+	await $`ssh ${sshOpts.split(" ")} ${remote} "cat > /etc/systemd/system/vibes.service << 'SVCEOF'
+${serviceFile}SVCEOF"`;
+	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl daemon-reload"`;
+	console.log("  ✓ Service file updated\n");
+
+	console.log("🔄 Step 6: Restarting service");
 	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl restart vibes"`;
 
 	// Check status

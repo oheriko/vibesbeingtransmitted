@@ -32,7 +32,23 @@ async function main() {
 		console.log(`  → Deleting server '${config.serverName}'`);
 		const result = await hcloud(["server", "delete", config.serverName]);
 		if (result.success) {
-			console.log(`  ✓ Server deleted`);
+			console.log(`  ✓ Server delete initiated`);
+			// Poll until server is fully removed before deleting firewall
+			console.log(`  ⏳ Waiting for server cleanup...`);
+			let attempts = 0;
+			const maxAttempts = 30; // 30 seconds max
+			while (attempts < maxAttempts) {
+				const stillExists = await getServer(config.serverName);
+				if (!stillExists) {
+					console.log(`  ✓ Server fully removed`);
+					break;
+				}
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+				attempts++;
+			}
+			if (attempts >= maxAttempts) {
+				console.log(`  ⚠ Server removal timed out, continuing anyway`);
+			}
 		} else {
 			console.error(`  ✗ Failed to delete server: ${result.error}`);
 		}

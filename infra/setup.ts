@@ -57,7 +57,15 @@ async function setupSSHKey(): Promise<void> {
 
 	if (!existsSync(pubKeyPath)) {
 		console.log(`  → Generating new SSH key at ${keyPath}`);
-		await $`ssh-keygen -t ed25519 -f ${keyPath} -N "" -C ${config.sshKeyName}`;
+		// Use Bun.spawn for better control over arguments
+		const proc = Bun.spawn(["ssh-keygen", "-t", "ed25519", "-f", keyPath, "-N", "", "-C", config.sshKeyName], {
+			stdout: "inherit",
+			stderr: "inherit",
+		});
+		await proc.exited;
+		if (proc.exitCode !== 0) {
+			throw new Error(`ssh-keygen failed with exit code ${proc.exitCode}`);
+		}
 	}
 
 	// Upload to hcloud
@@ -214,9 +222,13 @@ packages:
   - apt-transport-https
 
 runcmd:
-  # Install Bun
-  - curl -fsSL https://bun.sh/install | bash
-  - ln -s /root/.bun/bin/bun /usr/local/bin/bun
+  # Install Bun (direct binary download for ARM64)
+  - curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-aarch64.zip -o /tmp/bun.zip
+  - unzip -o /tmp/bun.zip -d /tmp
+  - mv /tmp/bun-linux-aarch64/bun /usr/local/bin/bun
+  - chmod +x /usr/local/bin/bun
+  - rm -rf /tmp/bun.zip /tmp/bun-linux-aarch64
+  - /usr/local/bin/bun --version
 
   # Install Caddy
   - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -243,7 +255,7 @@ runcmd:
     Restart=always
     RestartSec=10
     Environment=NODE_ENV=production
-    EnvironmentFile=/opt/vibes/.env
+    EnvironmentFile=-/opt/vibes/.env
 
     [Install]
     WantedBy=multi-user.target

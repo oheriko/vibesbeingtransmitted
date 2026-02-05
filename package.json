@@ -18,7 +18,8 @@
 		"infra:ssh": "bun run infra/ssh.ts",
 		"infra:status": "bun run infra/status.ts",
 		"infra:logs": "bun run infra/logs.ts",
-		"infra:destroy": "bun run infra/destroy.ts"
+		"infra:destroy": "bun run infra/destroy.ts",
+		"infra:diagnose": "bun run infra/diagnose.ts"
 	},
 	"dependencies": {
 		"@hono/node-server": "^1.13.7",
