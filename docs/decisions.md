@@ -11,6 +11,24 @@ Each decision includes:
 
 ## Decisions
 
+### 2026-02-05: www subdomain as canonical
+- **Commit:** `0fb6a11`
+- **Status:** Active
+- **Summary:** Use www.vibesbeingtransmitted.com as canonical URL; apex redirects to www via Cloudflare
+- **Rationale:** www allows CNAME flexibility for CDNs; apex requires A records only
+
+### 2026-02-05: Security-hardened server infrastructure
+- **Commit:** `791f7c1`
+- **Status:** Active
+- **Summary:** Hetzner Cloud with non-root deploy user, SSH hardening, UFW firewall, fail2ban, unattended-upgrades
+- **Rationale:** Production security best practices; defense in depth
+
+### 2026-02-05: Scripts-only infrastructure management
+- **Commit:** `b63e375`
+- **Status:** Active
+- **Summary:** All infrastructure operations must use `bun run infra:*` scripts; never run manual hcloud/ssh/scp commands
+- **Rationale:** Ensures reproducibility, documentation, and prevents configuration drift
+
 ### 2026-02-04: Bun-only runtime
 - **Commit:** (initial setup)
 - **Status:** Active

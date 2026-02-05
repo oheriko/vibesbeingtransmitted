@@ -38,7 +38,8 @@ bun test --coverage         # With coverage report
 **Important:** Only use `bun test` - no npm, no other test runners.
 
 ### CI/CD
-- [TBD - depends on infrastructure]
+- Manual deployment via `bun run infra:deploy`
+- No automated CI/CD pipeline yet
 
 ## Coverage Requirements
 

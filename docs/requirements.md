@@ -23,9 +23,9 @@ Vibes Being Transmitted is a Slack plugin that lets teammates see what each othe
    - Description: Show the currently playing track/artist in the user's Slack status
    - User story: As a user, I want my Slack status to show what I'm listening to so my teammates can see my music taste
    - Acceptance criteria:
-     - [ ] Status updates automatically when track changes
-     - [ ] Shows artist and track name
-     - [ ] Clears when playback stops
+     - [x] Status updates automatically when track changes
+     - [x] Shows artist and track name
+     - [x] Clears when playback stops
 
 2. **Open in Spotify**
    - Description: Teammates can click to open the album/playlist/radio in their own Spotify

@@ -11,7 +11,12 @@
 - Spotify links must work on all platforms
 
 ### Infrastructure
-- [TBD - no infrastructure decisions yet]
+- **Hosting:** Hetzner Cloud (Germany, fsn1 region)
+- **Server:** cx22 (2 vCPU, 4GB RAM, 40GB SSD)
+- **OS:** Ubuntu 24.04 with security hardening
+- **Domain:** www.vibesbeingtransmitted.com (www canonical, apex redirects via Cloudflare)
+- **SSL:** Automatic via Caddy + Let's Encrypt
+- **All infrastructure operations must use `bun run infra:*` scripts - never manual commands**
 
 ## Business Constraints
 
@@ -66,10 +71,13 @@
 ## Operational Constraints
 
 ### Availability
-- [TBD - depends on infrastructure choice]
+- Single server deployment (no HA)
+- Systemd manages process restarts
+- Unattended security updates enabled
 
 ### Monitoring
-- [TBD]
+- Systemd journal for logs (`bun run infra:logs`)
+- Manual monitoring via `bun run infra:status`
 
 ## Integration Constraints
 
@@ -82,6 +90,7 @@
 
 - **Spotify polling:** No webhooks available; must poll for playback state
 - **Slack status length:** Limited character count for status text
+- **Slack status emoji:** Must be standard or pre-existing custom emoji; cannot dynamically set album art as emoji
 - **Premium vs Free:** Some Spotify features may differ by account type
 
 ## Trade-offs Accepted
