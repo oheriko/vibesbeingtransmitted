@@ -29,6 +29,7 @@
 		"react-dom": "^19.0.0"
 	},
 	"devDependencies": {
+		"@libsql/client": "^0.17.0",
 		"@types/bun": "latest",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
