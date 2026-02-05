@@ -1,22 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
-  <!-- Background -->
-  <rect width="200" height="60" fill="#4b1c4c"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
 
-  <!-- Top wavy line -->
-  <path d="M 10 15 Q 30 10, 50 15 T 90 15 T 130 15 T 170 15 T 190 15"
-        stroke="white"
-        stroke-width="2"
-        fill="none"/>
+  <!-- Broadcast point -->
+  <circle cx="6" cy="16" r="2" fill="white"/>
 
-  <!-- Middle wavy line -->
-  <path d="M 10 30 Q 30 25, 50 30 T 90 30 T 130 30 T 170 30 T 190 30"
-        stroke="white"
-        stroke-width="2"
-        fill="none"/>
-
-  <!-- Bottom wavy line -->
-  <path d="M 10 45 Q 30 40, 50 45 T 90 45 T 130 45 T 170 45 T 190 45"
-        stroke="white"
-        stroke-width="2"
-        fill="none"/>
+  <!-- Wave signals emanating outward -->
+  <path d="M 10 16 Q 14 10, 18 16 Q 14 22, 10 16" stroke="white" stroke-width="1" fill="none"/>
+  <path d="M 14 16 Q 18 8, 22 16 Q 18 24, 14 16" stroke="white" stroke-width="1" fill="none"/>
+  <path d="M 18 16 Q 22 6, 26 16 Q 22 26, 18 16" stroke="white" stroke-width="1" fill="none"/>
 </svg>
