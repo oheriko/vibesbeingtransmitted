@@ -12,6 +12,7 @@ export const db = drizzle(sqlite, { schema });
 
 // Initialize database with schema (creates tables if they don't exist)
 export function initializeDatabase(): void {
+	// Create tables first (without indexes that reference optional columns)
 	sqlite.exec(`
 		CREATE TABLE IF NOT EXISTS workspaces (
 			id TEXT PRIMARY KEY,
@@ -28,9 +29,7 @@ export function initializeDatabase(): void {
 			spotify_access_token TEXT,
 			spotify_refresh_token TEXT,
 			spotify_expires_at INTEGER,
-			extension_token TEXT,
 			is_sharing INTEGER NOT NULL DEFAULT 0,
-			last_source TEXT,
 			last_track_id TEXT,
 			last_track_name TEXT,
 			last_artist_name TEXT,
@@ -47,12 +46,11 @@ export function initializeDatabase(): void {
 
 		CREATE INDEX IF NOT EXISTS idx_users_workspace ON users(workspace_id);
 		CREATE INDEX IF NOT EXISTS idx_users_sharing ON users(is_sharing) WHERE is_sharing = 1;
-		CREATE INDEX IF NOT EXISTS idx_users_extension_token ON users(extension_token);
 		CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 		CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 	`);
 
-	// Migrations for existing databases
+	// Migrations for existing databases (run before creating indexes on these columns)
 	try {
 		sqlite.exec(`ALTER TABLE users ADD COLUMN extension_token TEXT`);
 	} catch {
@@ -63,6 +61,11 @@ export function initializeDatabase(): void {
 	} catch {
 		// Column already exists
 	}
+
+	// Create indexes on migrated columns
+	sqlite.exec(`
+		CREATE INDEX IF NOT EXISTS idx_users_extension_token ON users(extension_token);
+	`);
 }
 
 export { schema };
