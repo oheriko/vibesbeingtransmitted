@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 // Provide env vars so config loads successfully
 process.env.APP_URL = "http://localhost:3000";
 process.env.ENCRYPTION_KEY = "aa".repeat(32);
+process.env.BETTER_AUTH_SECRET = "test-better-auth-secret-minimum-32chars!!";
 process.env.SLACK_CLIENT_ID = "test";
 process.env.SLACK_CLIENT_SECRET = "test";
 process.env.SLACK_SIGNING_SECRET = "test";

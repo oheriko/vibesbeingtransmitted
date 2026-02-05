@@ -3,32 +3,18 @@ import type { UserStatus } from "@shared/types";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { config } from "../config";
+import { getDomainUser, requireSession } from "../middleware/session";
+import { createSignedState } from "../services/crypto";
 
 const api = new Hono();
 
-// Get user status by session
+// All /api/user/* and /api/spotify/* routes require a better-auth session
+api.use("/user/*", requireSession);
+api.use("/spotify/*", requireSession);
+
+// Get user status
 api.get("/user/status", async (c) => {
-	const sessionId = c.req.header("X-Session-Id");
-
-	if (!sessionId) {
-		return c.json({ error: "No session" }, 401);
-	}
-
-	const session = await db.query.sessions.findFirst({
-		where: eq(schema.sessions.id, sessionId),
-	});
-
-	if (!session || session.expiresAt < new Date()) {
-		return c.json({ error: "Invalid session" }, 401);
-	}
-
-	const user = await db.query.users.findFirst({
-		where: eq(schema.users.id, session.userId),
-	});
-
-	if (!user) {
-		return c.json({ error: "User not found" }, 404);
-	}
+	const user = getDomainUser(c);
 
 	const status: UserStatus = {
 		isConnected: !!user.spotifyAccessToken,
@@ -47,45 +33,20 @@ api.get("/user/status", async (c) => {
 
 // Toggle sharing
 api.post("/user/sharing", async (c) => {
-	const sessionId = c.req.header("X-Session-Id");
-
-	if (!sessionId) {
-		return c.json({ error: "No session" }, 401);
-	}
-
-	const session = await db.query.sessions.findFirst({
-		where: eq(schema.sessions.id, sessionId),
-	});
-
-	if (!session || session.expiresAt < new Date()) {
-		return c.json({ error: "Invalid session" }, 401);
-	}
-
+	const user = getDomainUser(c);
 	const body = await c.req.json<{ isSharing: boolean }>();
 
 	await db
 		.update(schema.users)
 		.set({ isSharing: body.isSharing })
-		.where(eq(schema.users.id, session.userId));
+		.where(eq(schema.users.id, user.id));
 
 	return c.json({ ok: true });
 });
 
 // Disconnect Spotify
 api.post("/user/disconnect", async (c) => {
-	const sessionId = c.req.header("X-Session-Id");
-
-	if (!sessionId) {
-		return c.json({ error: "No session" }, 401);
-	}
-
-	const session = await db.query.sessions.findFirst({
-		where: eq(schema.sessions.id, sessionId),
-	});
-
-	if (!session || session.expiresAt < new Date()) {
-		return c.json({ error: "Invalid session" }, 401);
-	}
+	const user = getDomainUser(c);
 
 	await db
 		.update(schema.users)
@@ -99,28 +60,16 @@ api.post("/user/disconnect", async (c) => {
 			lastArtistName: null,
 			isCurrentlyPlaying: false,
 		})
-		.where(eq(schema.users.id, session.userId));
+		.where(eq(schema.users.id, user.id));
 
 	return c.json({ ok: true });
 });
 
-// Get Spotify connect URL
+// Get Spotify connect URL (returns a signed URL, no bare user_id)
 api.get("/spotify/connect-url", async (c) => {
-	const sessionId = c.req.header("X-Session-Id");
-
-	if (!sessionId) {
-		return c.json({ error: "No session" }, 401);
-	}
-
-	const session = await db.query.sessions.findFirst({
-		where: eq(schema.sessions.id, sessionId),
-	});
-
-	if (!session || session.expiresAt < new Date()) {
-		return c.json({ error: "Invalid session" }, 401);
-	}
-
-	const url = `${config.appUrl}/auth/spotify/start?user_id=${session.userId}`;
+	const user = getDomainUser(c);
+	const signedState = await createSignedState(user.id);
+	const url = `${config.appUrl}/auth/spotify/start?state=${encodeURIComponent(signedState)}`;
 
 	return c.json({ url });
 });

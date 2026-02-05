@@ -1,15 +1,31 @@
+import { authClient } from "../auth";
+
 interface LandingProps {
-	onLogin: (sessionId: string) => void;
+	isSignedIn: boolean;
 }
 
-export function Landing(_props: LandingProps) {
-	const slackAuthUrl =
-		"https://slack.com/oauth/v2/authorize?client_id=1371702621683.10427102988647&scope=commands,chat:write,users:read&user_scope=users.profile:read,users.profile:write";
+export function Landing({ isSignedIn }: LandingProps) {
+	const slackAuthUrl = "/auth/slack";
 
 	return (
 		<div style={styles.page}>
 			{/* Nav */}
 			<nav style={styles.nav}>
+				{isSignedIn ? (
+					<a href="/dashboard" style={styles.navSignIn}>
+						Dashboard
+					</a>
+				) : (
+					<button
+						type="button"
+						onClick={() =>
+							authClient.signIn.social({ provider: "slack", callbackURL: "/dashboard" })
+						}
+						style={styles.navSignIn}
+					>
+						Sign in with Slack
+					</button>
+				)}
 				<a
 					href="https://github.com/oheriko/vibesbeingtransmitted"
 					target="_blank"
@@ -179,8 +195,7 @@ export function Landing(_props: LandingProps) {
 						any time by removing the app from Slack, which deletes all your data.
 					</p>
 					<p style={styles.privacyText}>
-						<strong>Open source:</strong> This app is fully open source. You can review the code
-						on{" "}
+						<strong>Open source:</strong> This app is fully open source. You can review the code on{" "}
 						<a
 							href="https://github.com/oheriko/vibesbeingtransmitted"
 							style={styles.link}
@@ -212,11 +227,24 @@ const styles: Record<string, React.CSSProperties> = {
 	nav: {
 		display: "flex",
 		justifyContent: "flex-end",
+		alignItems: "center",
+		gap: "16px",
 		padding: "16px 24px",
 		position: "absolute",
 		top: 0,
 		right: 0,
 		left: 0,
+	},
+	navSignIn: {
+		color: "#b8b8b8",
+		background: "none",
+		border: "1px solid #444",
+		borderRadius: "6px",
+		padding: "6px 14px",
+		cursor: "pointer",
+		textDecoration: "none",
+		fontSize: "14px",
+		fontWeight: 500,
 	},
 	githubLink: {
 		color: "#888",

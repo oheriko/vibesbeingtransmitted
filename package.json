@@ -23,7 +23,7 @@
 		"build:extension": "cd extension && LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 bunx wxt build && bunx wxt build --browser firefox && cd .output/chrome-mv3 && zip -r ../../../public/vibes-extension.zip . && cd ../firefox-mv2 && zip -r ../../../public/vibes-extension-firefox.zip ."
 	},
 	"dependencies": {
-		"@hono/node-server": "^1.13.7",
+		"better-auth": "^1.4.18",
 		"drizzle-orm": "^0.38.3",
 		"hono": "^4.6.16",
 		"react": "^19.0.0",

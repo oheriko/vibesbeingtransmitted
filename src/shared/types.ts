@@ -74,6 +74,10 @@ export interface Config {
 	port: number;
 	databasePath: string;
 	encryptionKey: string;
+	betterAuth: {
+		secret: string;
+		url: string;
+	};
 	slack: {
 		clientId: string;
 		clientSecret: string;

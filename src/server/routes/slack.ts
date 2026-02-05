@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { config } from "../config";
 import { verifySlackRequest } from "../middleware/slack";
+import { createSignedState, hashToken } from "../services/crypto";
 import { buildAppHomeView, openTokenModal, publishAppHome } from "../services/slack";
 
 type Env = { Variables: { rawBody: string } };
@@ -13,7 +14,17 @@ const slack = new Hono<Env>();
 // Slack Events API
 slack.post("/events", verifySlackRequest, async (c) => {
 	const rawBody = c.get("rawBody");
-	const body = JSON.parse(rawBody);
+	let body: {
+		type?: string;
+		challenge?: string;
+		team_id?: string;
+		event?: { type?: string; user?: string };
+	};
+	try {
+		body = JSON.parse(rawBody);
+	} catch {
+		return c.json({ error: "Invalid JSON" }, 400);
+	}
 
 	// URL Verification challenge
 	if (body.type === "url_verification") {
@@ -24,7 +35,7 @@ slack.post("/events", verifySlackRequest, async (c) => {
 	if (body.type === "event_callback") {
 		const event = body.event;
 
-		if (event.type === "app_home_opened") {
+		if (event?.type === "app_home_opened" && event.user && body.team_id) {
 			await handleAppHomeOpened(event.user, body.team_id);
 		}
 	}
@@ -79,7 +90,18 @@ slack.post("/interactions", verifySlackRequest, async (c) => {
 		return c.json({ ok: false });
 	}
 
-	const payload = JSON.parse(payloadStr);
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(payloadStr);
+	} catch {
+		return c.json({ error: "Invalid JSON payload" }, 400);
+	}
+	const payload = parsed as {
+		user?: { id?: string };
+		team?: { id?: string };
+		actions?: Array<{ action_id?: string }>;
+		trigger_id?: string;
+	};
 	const userId = payload.user?.id;
 	const teamId = payload.team?.id;
 	const action = payload.actions?.[0];
@@ -116,17 +138,14 @@ slack.post("/interactions", verifySlackRequest, async (c) => {
 				break;
 			}
 
-			// Generate token if needed (same logic as handleTokenCommand)
-			let token = user.extensionToken;
-			if (!token) {
-				token = crypto.randomUUID();
-				await db
-					.update(schema.users)
-					.set({ extensionToken: token })
-					.where(eq(schema.users.id, userId));
-			}
+			// Always generate a fresh token, store the hash
+			const plainToken = crypto.randomUUID();
+			await db
+				.update(schema.users)
+				.set({ extensionToken: hashToken(plainToken) })
+				.where(eq(schema.users.id, userId));
 
-			await openTokenModal(workspace.botAccessToken, payload.trigger_id, token);
+			await openTokenModal(workspace.botAccessToken, payload.trigger_id || "", plainToken);
 			break;
 		}
 	}
@@ -151,7 +170,7 @@ async function refreshAppHome(userId: string, teamId: string): Promise<void> {
 		return;
 	}
 
-	const view = buildAppHomeView(user || null, config.appUrl);
+	const view = await buildAppHomeView(user || null, config.appUrl);
 	await publishAppHome(workspace.botAccessToken, userId, view);
 }
 
@@ -174,9 +193,12 @@ async function handleConnectCommand(c: Context<Env>, userId: string, _teamId: st
 		});
 	}
 
+	const signedState = await createSignedState(userId);
+	const connectUrl = `${config.appUrl}/auth/spotify/start?state=${encodeURIComponent(signedState)}`;
+
 	return c.json({
 		response_type: "ephemeral",
-		text: `Click here to connect your Spotify: ${config.appUrl}/auth/spotify/start?user_id=${userId}`,
+		text: `Click here to connect your Spotify: ${connectUrl}`,
 	});
 }
 
@@ -299,16 +321,16 @@ async function handleTokenCommand(c: Context<Env>, userId: string) {
 		});
 	}
 
-	// Generate a new token if user doesn't have one
-	let token = user.extensionToken;
-	if (!token) {
-		token = crypto.randomUUID();
-		await db.update(schema.users).set({ extensionToken: token }).where(eq(schema.users.id, userId));
-	}
+	// Always generate a fresh token, store the SHA-256 hash
+	const plainToken = crypto.randomUUID();
+	await db
+		.update(schema.users)
+		.set({ extensionToken: hashToken(plainToken) })
+		.where(eq(schema.users.id, userId));
 
 	return c.json({
 		response_type: "ephemeral",
-		text: `🔑 *Your Extension Token*\n\n\`${token}\`\n\nPaste this into the Vibes browser extension to connect YouTube Music.\n\n_Keep this token secret - anyone with it can update your status._`,
+		text: `🔑 *Your Extension Token*\n\n\`${plainToken}\`\n\nPaste this into the Vibes browser extension to connect YouTube Music.\n\n_Keep this token secret - anyone with it can update your status. This token is shown once — run \`/vibes token\` again to generate a new one._`,
 	});
 }
 

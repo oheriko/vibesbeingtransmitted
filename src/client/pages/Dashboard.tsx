@@ -2,11 +2,11 @@ import type { UserStatus } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
 
 interface DashboardProps {
-	sessionId: string | null;
+	isSignedIn: boolean;
 	onLogout: () => void;
 }
 
-export function Dashboard({ sessionId, onLogout }: DashboardProps) {
+export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 	const [status, setStatus] = useState<UserStatus | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -16,11 +16,9 @@ export function Dashboard({ sessionId, onLogout }: DashboardProps) {
 	const spotifyConnected = params.has("spotify");
 
 	const fetchStatus = useCallback(async () => {
-		if (!sessionId) return;
-
 		try {
 			const res = await fetch("/api/user/status", {
-				headers: { "X-Session-Id": sessionId },
+				credentials: "include",
 			});
 
 			if (!res.ok) {
@@ -37,26 +35,24 @@ export function Dashboard({ sessionId, onLogout }: DashboardProps) {
 		} finally {
 			setLoading(false);
 		}
-	}, [sessionId, onLogout]);
+	}, [onLogout]);
 
 	useEffect(() => {
-		if (sessionId) {
+		if (isSignedIn) {
 			fetchStatus();
 		} else {
 			setLoading(false);
 		}
-	}, [sessionId, fetchStatus]);
+	}, [isSignedIn, fetchStatus]);
 
 	async function toggleSharing() {
-		if (!sessionId || !status) return;
+		if (!status) return;
 
 		try {
 			const res = await fetch("/api/user/sharing", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"X-Session-Id": sessionId,
-				},
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
 				body: JSON.stringify({ isSharing: !status.isSharing }),
 			});
 
@@ -69,11 +65,9 @@ export function Dashboard({ sessionId, onLogout }: DashboardProps) {
 	}
 
 	async function connectSpotify() {
-		if (!sessionId) return;
-
 		try {
 			const res = await fetch("/api/spotify/connect-url", {
-				headers: { "X-Session-Id": sessionId },
+				credentials: "include",
 			});
 
 			if (res.ok) {
@@ -86,12 +80,10 @@ export function Dashboard({ sessionId, onLogout }: DashboardProps) {
 	}
 
 	async function disconnectSpotify() {
-		if (!sessionId) return;
-
 		try {
 			const res = await fetch("/api/user/disconnect", {
 				method: "POST",
-				headers: { "X-Session-Id": sessionId },
+				credentials: "include",
 			});
 
 			if (res.ok) {
@@ -112,8 +104,8 @@ export function Dashboard({ sessionId, onLogout }: DashboardProps) {
 		);
 	}
 
-	// No session - show message about using Slack
-	if (!sessionId) {
+	// No session — show post-install / post-connect message
+	if (!isSignedIn) {
 		return (
 			<div style={styles.container}>
 				<div style={styles.content}>

@@ -2,8 +2,9 @@ import { db, schema } from "@db/index";
 import type { SlackOAuthResponse, SpotifyTokenResponse } from "@shared/types";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { auth as betterAuth } from "../auth";
 import { config } from "../config";
-import { encrypt } from "../services/crypto";
+import { createSignedState, encrypt, verifySignedState } from "../services/crypto";
 
 const auth = new Hono();
 
@@ -17,18 +18,27 @@ auth.get("/slack", async (c) => {
 	}
 
 	if (!code) {
-		// Redirect to Slack OAuth
+		// Redirect to Slack OAuth with CSRF state
 		const scopes = ["commands", "chat:write", "users:read"];
 		const userScopes = ["users.profile:write", "users.profile:read"];
 		const redirectUri = `${config.appUrl}/auth/slack`;
+
+		const state = await createSignedState(crypto.randomUUID());
 
 		const url = new URL("https://slack.com/oauth/v2/authorize");
 		url.searchParams.set("client_id", config.slack.clientId);
 		url.searchParams.set("scope", scopes.join(","));
 		url.searchParams.set("user_scope", userScopes.join(","));
 		url.searchParams.set("redirect_uri", redirectUri);
+		url.searchParams.set("state", state);
 
 		return c.redirect(url.toString());
+	}
+
+	// Verify CSRF state
+	const state = c.req.query("state");
+	if (!state || !(await verifySignedState(state))) {
+		return c.redirect("/?error=invalid_state");
 	}
 
 	// Exchange code for tokens
@@ -85,7 +95,9 @@ auth.get("/slack", async (c) => {
 			},
 		});
 
-	return c.redirect(`/dashboard?installed=true`);
+	// Chain bot install into better-auth Slack sign-in so the user gets a session
+	const callbackURL = encodeURIComponent("/dashboard?installed=true");
+	return c.redirect(`/api/auth/signin/social?provider=slack&callbackURL=${callbackURL}`);
 });
 
 // Spotify OAuth - User connection flow
@@ -103,9 +115,14 @@ auth.get("/spotify", async (c) => {
 		return c.redirect("/dashboard?error=invalid_request");
 	}
 
+	// Verify signed state to get userId
+	const userId = await verifySignedState(state);
+	if (!userId) {
+		return c.redirect("/dashboard?error=invalid_state");
+	}
+
 	// Exchange code for tokens
 	const redirectUri = config.spotify.redirectUri || `${config.appUrl}/auth/spotify`;
-	console.log("Spotify token exchange - redirect_uri:", redirectUri);
 
 	const response = await fetch("https://accounts.spotify.com/api/token", {
 		method: "POST",
@@ -120,15 +137,12 @@ auth.get("/spotify", async (c) => {
 		}),
 	});
 
-	const responseText = await response.text();
-	console.log("Spotify token response status:", response.status);
-	console.log("Spotify token response:", responseText);
+	console.log("Spotify token exchange:", response.status === 200 ? "success" : "failed");
 
 	let data: SpotifyTokenResponse & { error?: string; error_description?: string };
 	try {
-		data = JSON.parse(responseText);
+		data = await response.json();
 	} catch {
-		console.error("Failed to parse Spotify response as JSON:", responseText);
 		return c.redirect(`/dashboard?error=${encodeURIComponent("spotify_response_error")}`);
 	}
 
@@ -136,9 +150,6 @@ auth.get("/spotify", async (c) => {
 		console.error("Spotify OAuth error:", data.error, data.error_description);
 		return c.redirect(`/dashboard?error=${encodeURIComponent(data.error)}`);
 	}
-
-	// Decrypt state to get userId
-	const userId = state;
 
 	// Update user with Spotify tokens
 	const encryptedAccessToken = await encrypt(data.access_token);
@@ -159,21 +170,48 @@ auth.get("/spotify", async (c) => {
 	return c.redirect("/dashboard?spotify=connected");
 });
 
-// Initiate Spotify OAuth (called from slash command or dashboard)
+// Initiate Spotify OAuth — requires authentication:
+//   1. Signed state token (from Slack slash commands / App Home)
+//   2. better-auth session cookie (from dashboard)
 auth.get("/spotify/start", async (c) => {
-	const userId = c.req.query("user_id");
+	let userId: string | null = null;
 
-	if (!userId) {
-		return c.json({ error: "Missing user_id" }, 400);
+	// Method 1: Signed state token (from Slack)
+	const stateParam = c.req.query("state");
+	if (stateParam) {
+		userId = await verifySignedState(stateParam);
 	}
 
-	// Verify user exists
+	// Method 2: better-auth session cookie (from dashboard)
+	if (!userId) {
+		const authSession = await betterAuth.api.getSession({
+			headers: c.req.raw.headers,
+		});
+
+		if (authSession) {
+			// Look up Slack account linked to this better-auth user
+			const slackAccount = await db.query.account.findFirst({
+				where: (fields, { and, eq }) =>
+					and(eq(fields.userId, authSession.user.id), eq(fields.providerId, "slack")),
+			});
+
+			if (slackAccount) {
+				userId = slackAccount.accountId;
+			}
+		}
+	}
+
+	if (!userId) {
+		return c.json({ error: "Unauthorized — sign in first" }, 401);
+	}
+
+	// Verify user exists in our domain table
 	const user = await db.query.users.findFirst({
 		where: eq(schema.users.id, userId),
 	});
 
 	if (!user) {
-		return c.json({ error: "User not found" }, 404);
+		return c.json({ error: "User not found — install the Slack app first" }, 404);
 	}
 
 	const scopes = ["user-read-playback-state", "user-read-currently-playing"];
@@ -184,7 +222,8 @@ auth.get("/spotify/start", async (c) => {
 	url.searchParams.set("response_type", "code");
 	url.searchParams.set("redirect_uri", redirectUri);
 	url.searchParams.set("scope", scopes.join(" "));
-	url.searchParams.set("state", userId);
+	const signedState = await createSignedState(userId);
+	url.searchParams.set("state", signedState);
 
 	return c.redirect(url.toString());
 });

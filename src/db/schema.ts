@@ -21,7 +21,7 @@ export const users = sqliteTable("users", {
 	spotifyRefreshToken: text("spotify_refresh_token"), // Encrypted
 	spotifyExpiresAt: integer("spotify_expires_at", { mode: "timestamp" }),
 	// Extension token (for YouTube Music, etc.)
-	extensionToken: text("extension_token"), // Plain text - used to auth extension
+	extensionToken: text("extension_token"), // SHA-256 hash of extension token
 	// Status
 	isSharing: integer("is_sharing", { mode: "boolean" }).notNull().default(false),
 	lastSource: text("last_source"), // 'spotify' | 'youtube-music' | null
@@ -33,12 +33,64 @@ export const users = sqliteTable("users", {
 	pollErrorCount: integer("poll_error_count").notNull().default(0),
 });
 
+// Legacy sessions table — unused, replaced by better-auth session table
 export const sessions = sqliteTable("sessions", {
 	id: text("id").primaryKey(), // UUID
 	userId: text("user_id")
 		.notNull()
 		.references(() => users.id, { onDelete: "cascade" }),
 	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+});
+
+// better-auth tables (singular names to avoid conflicts with our plural domain tables)
+export const user = sqliteTable("user", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	email: text("email").notNull(),
+	emailVerified: integer("emailVerified", { mode: "boolean" }).notNull().default(false),
+	image: text("image"),
+	createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+});
+
+export const session = sqliteTable("session", {
+	id: text("id").primaryKey(),
+	userId: text("userId")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	token: text("token").notNull().unique(),
+	expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+	ipAddress: text("ipAddress"),
+	userAgent: text("userAgent"),
+	createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+});
+
+export const account = sqliteTable("account", {
+	id: text("id").primaryKey(),
+	userId: text("userId")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	accountId: text("accountId").notNull(),
+	providerId: text("providerId").notNull(),
+	accessToken: text("accessToken"),
+	refreshToken: text("refreshToken"),
+	idToken: text("idToken"),
+	accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp" }),
+	refreshTokenExpiresAt: integer("refreshTokenExpiresAt", { mode: "timestamp" }),
+	scope: text("scope"),
+	password: text("password"),
+	createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+});
+
+export const verification = sqliteTable("verification", {
+	id: text("id").primaryKey(),
+	identifier: text("identifier").notNull(),
+	value: text("value").notNull(),
+	expiresAt: integer("expiresAt", { mode: "timestamp" }).notNull(),
+	createdAt: integer("createdAt", { mode: "timestamp" }),
+	updatedAt: integer("updatedAt", { mode: "timestamp" }),
 });
 
 // Type exports
@@ -48,3 +100,6 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+export type AuthUser = typeof user.$inferSelect;
+export type AuthSession = typeof session.$inferSelect;
+export type AuthAccount = typeof account.$inferSelect;

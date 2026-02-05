@@ -14,6 +14,10 @@ export function loadConfig(): Config {
 		port: Number.parseInt(process.env.PORT || "3000", 10),
 		databasePath: process.env.DATABASE_PATH || "./vibes.db",
 		encryptionKey: requireEnv("ENCRYPTION_KEY"),
+		betterAuth: {
+			secret: requireEnv("BETTER_AUTH_SECRET"),
+			url: process.env.BETTER_AUTH_URL || requireEnv("APP_URL"),
+		},
 		slack: {
 			clientId: requireEnv("SLACK_CLIENT_ID"),
 			clientSecret: requireEnv("SLACK_CLIENT_SECRET"),

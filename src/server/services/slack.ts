@@ -1,7 +1,7 @@
 import type { User } from "@db/schema";
 import { formatStatusEmoji, formatStatusText } from "@shared/format";
 import type { SpotifyTrack } from "@shared/types";
-import { decrypt } from "./crypto";
+import { createSignedState, decrypt } from "./crypto";
 
 interface SlackApiResponse {
 	ok: boolean;
@@ -84,10 +84,10 @@ interface SlackBlockKitSection {
 	>;
 }
 
-export function buildAppHomeView(
+export async function buildAppHomeView(
 	user: User | null,
 	appUrl: string
-): { type: "home"; blocks: SlackBlockKitSection[] } {
+): Promise<{ type: "home"; blocks: SlackBlockKitSection[] }> {
 	const blocks: SlackBlockKitSection[] = [];
 
 	// Header
@@ -130,7 +130,8 @@ export function buildAppHomeView(
 			},
 		});
 	} else if (!user.spotifyAccessToken) {
-		// User needs to connect Spotify
+		// User needs to connect Spotify — use signed URL
+		const signedState = await createSignedState(user.id);
 		blocks.push({
 			type: "section",
 			text: {
@@ -144,7 +145,7 @@ export function buildAppHomeView(
 					text: "Connect Spotify",
 					emoji: true,
 				},
-				url: `${appUrl}/auth/spotify/start?user_id=${user.id}`,
+				url: `${appUrl}/auth/spotify/start?state=${encodeURIComponent(signedState)}`,
 				action_id: "connect_spotify",
 				style: "primary",
 			},
