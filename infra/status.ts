@@ -57,6 +57,8 @@ async function main() {
 				const proc = Bun.spawn(
 					[
 						"ssh",
+						"-o",
+						"IdentitiesOnly=yes",
 						"-i",
 						keyPath,
 						"-o",

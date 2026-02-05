@@ -24,7 +24,7 @@ export const config = {
 
 	// Paths
 	sshKeyPath: "~/.ssh/vibes_deploy",
-	deployUser: "root",
+	deployUser: "deploy",
 } as const;
 
 export type Config = typeof config;

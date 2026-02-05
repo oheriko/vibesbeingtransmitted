@@ -209,20 +209,113 @@ async function setupServer(): Promise<void> {
 		return;
 	}
 
-	// Create cloud-init user data
+	// Read SSH public key to embed in cloud-init
+	const keyPath = config.sshKeyPath.replace("~", homedir());
+	const pubKeyPath = `${keyPath}.pub`;
+	const sshPubKey = existsSync(pubKeyPath) ? (await Bun.file(pubKeyPath).text()).trim() : "";
+
+	if (!sshPubKey) {
+		console.error("  ✗ SSH public key not found. Run setup again after key is created.");
+		process.exit(1);
+	}
+
+	// Create cloud-init user data with security hardening
 	const userData = `#cloud-config
+
+# ===========================================
+# SECURITY HARDENED CLOUD-INIT CONFIGURATION
+# ===========================================
+
+# Create non-root deploy user with sudo access
+users:
+  - name: deploy
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ${sshPubKey}
+
+# System packages
 package_update: true
 package_upgrade: true
 packages:
   - curl
   - git
   - unzip
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - apt-listchanges
   - debian-keyring
   - debian-archive-keyring
   - apt-transport-https
 
+# Write configuration files
+write_files:
+  # Fail2ban SSH jail configuration
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+      bantime = 3600
+      findtime = 600
+      banaction = iptables-multiport
+
+  # SSH hardening configuration
+  - path: /etc/ssh/sshd_config.d/hardening.conf
+    content: |
+      # Disable root login
+      PermitRootLogin no
+      # Disable password authentication (key-only)
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      ChallengeResponseAuthentication no
+      # Limit authentication attempts
+      MaxAuthTries 3
+      LoginGraceTime 30
+      # Disable forwarding
+      AllowTcpForwarding no
+      X11Forwarding no
+      AllowAgentForwarding no
+      # Only allow deploy user
+      AllowUsers deploy
+
+  # Automatic security updates configuration
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+
+  # Vibes systemd service (runs as deploy user)
+  - path: /etc/systemd/system/vibes.service
+    content: |
+      [Unit]
+      Description=Vibes Being Transmitted
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=deploy
+      Group=deploy
+      WorkingDirectory=/opt/vibes
+      ExecStart=/usr/local/bin/bun run start
+      Restart=always
+      RestartSec=10
+      Environment=NODE_ENV=production
+      EnvironmentFile=-/opt/vibes/.env
+
+      [Install]
+      WantedBy=multi-user.target
+
 runcmd:
-  # Install Bun (direct binary download for ARM64)
+  # ===================
+  # INSTALL BUN (ARM64)
+  # ===================
   - curl -fsSL https://github.com/oven-sh/bun/releases/latest/download/bun-linux-aarch64.zip -o /tmp/bun.zip
   - unzip -o /tmp/bun.zip -d /tmp
   - mv /tmp/bun-linux-aarch64/bun /usr/local/bin/bun
@@ -230,46 +323,50 @@ runcmd:
   - rm -rf /tmp/bun.zip /tmp/bun-linux-aarch64
   - /usr/local/bin/bun --version
 
-  # Install Caddy
+  # ===================
+  # INSTALL CADDY
+  # ===================
   - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
   - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
   - apt-get update
-  - apt-get install -y caddy
-
-  # Create app directory
-  - mkdir -p /opt/vibes
-  - chown root:root /opt/vibes
-
-  # Setup systemd service for app
-  - |
-    cat > /etc/systemd/system/vibes.service << 'EOF'
-    [Unit]
-    Description=Vibes Being Transmitted
-    After=network.target
-
-    [Service]
-    Type=simple
-    User=root
-    WorkingDirectory=/opt/vibes
-    ExecStart=/usr/local/bin/bun run start
-    Restart=always
-    RestartSec=10
-    Environment=NODE_ENV=production
-    EnvironmentFile=-/opt/vibes/.env
-
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-  - systemctl daemon-reload
-  - systemctl enable vibes
-
-  # Caddy config (auto-HTTPS)
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y caddy
+  # Configure Caddy for reverse proxy (after installation)
   - |
     cat > /etc/caddy/Caddyfile << 'EOF'
     vibesbeingtransmitted.com {
         reverse_proxy localhost:3000
     }
     EOF
+
+  # ===================
+  # SETUP APP DIRECTORY
+  # ===================
+  - mkdir -p /opt/vibes
+  - chown deploy:deploy /opt/vibes
+
+  # ===================
+  # CONFIGURE FIREWALL (UFW)
+  # ===================
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow ssh
+  - ufw allow http
+  - ufw allow https
+  - ufw --force enable
+
+  # ===================
+  # ENABLE SECURITY SERVICES
+  # ===================
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  # Restart SSH to apply hardening (Ubuntu uses 'ssh' not 'sshd')
+  - systemctl restart ssh
+
+  # ===================
+  # ENABLE APP SERVICES
+  # ===================
+  - systemctl daemon-reload
+  - systemctl enable vibes
   - systemctl reload caddy
 `;
 

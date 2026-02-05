@@ -32,7 +32,7 @@ async function main() {
 
 	const ip = server.public_net.ipv4.ip;
 	const keyPath = config.sshKeyPath.replace("~", homedir());
-	const sshOpts = `-i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
+	const sshOpts = `-o IdentitiesOnly=yes -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
 	const remote = `${config.deployUser}@${ip}`;
 
 	console.log(`Deploying to ${ip}\n`);
@@ -82,7 +82,7 @@ async function main() {
 
 	// Step 4: Stop any existing vibes processes
 	console.log("🛑 Step 4: Stopping existing processes");
-	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl stop vibes 2>/dev/null || true; pkill -f 'bun.*vibes' 2>/dev/null || true; sleep 1"`.nothrow();
+	await $`ssh ${sshOpts.split(" ")} ${remote} "sudo systemctl stop vibes 2>/dev/null || true; pkill -f 'bun.*vibes' 2>/dev/null || true; sleep 1"`.nothrow();
 	console.log("  ✓ Existing processes stopped\n");
 
 	// Step 5: Update and restart service
@@ -93,7 +93,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=deploy
+Group=deploy
 WorkingDirectory=/opt/vibes
 ExecStart=/usr/local/bin/bun run start
 Restart=always
@@ -104,16 +105,16 @@ EnvironmentFile=-/opt/vibes/.env
 [Install]
 WantedBy=multi-user.target
 `;
-	await $`ssh ${sshOpts.split(" ")} ${remote} "cat > /etc/systemd/system/vibes.service << 'SVCEOF'
+	await $`ssh ${sshOpts.split(" ")} ${remote} "sudo tee /etc/systemd/system/vibes.service > /dev/null << 'SVCEOF'
 ${serviceFile}SVCEOF"`;
-	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl daemon-reload"`;
+	await $`ssh ${sshOpts.split(" ")} ${remote} "sudo systemctl daemon-reload"`;
 	console.log("  ✓ Service file updated\n");
 
 	console.log("🔄 Step 6: Restarting service");
-	await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl restart vibes"`;
+	await $`ssh ${sshOpts.split(" ")} ${remote} "sudo systemctl restart vibes"`;
 
 	// Check status
-	const status = await $`ssh ${sshOpts.split(" ")} ${remote} "systemctl is-active vibes"`
+	const status = await $`ssh ${sshOpts.split(" ")} ${remote} "sudo systemctl is-active vibes"`
 		.text()
 		.catch(() => "unknown");
 	console.log(`  ✓ Service status: ${status.trim()}\n`);

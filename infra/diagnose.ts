@@ -30,6 +30,8 @@ async function main() {
 	const keyPath = config.sshKeyPath.replace("~", homedir());
 	const sshArgs = [
 		"ssh",
+		"-o",
+		"IdentitiesOnly=yes",
 		"-i",
 		keyPath,
 		"-o",
@@ -65,7 +67,7 @@ async function main() {
 
 	// Check cloud-init logs for bun installation
 	console.log("\n📋 Cloud-init log (bun related):");
-	const logProc = Bun.spawn([...sshArgs, "grep -i bun /var/log/cloud-init-output.log 2>/dev/null | tail -20 || echo 'No bun entries found'"], {
+	const logProc = Bun.spawn([...sshArgs, "sudo grep -i bun /var/log/cloud-init-output.log 2>/dev/null | tail -20 || echo 'No bun entries found'"], {
 		stdout: "pipe",
 		stderr: "pipe",
 	});
@@ -75,7 +77,7 @@ async function main() {
 
 	// Check cloud-init errors
 	console.log("\n📋 Cloud-init errors:");
-	const errProc = Bun.spawn([...sshArgs, "grep -i -E '(error|fail|fatal)' /var/log/cloud-init-output.log 2>/dev/null | tail -10 || echo 'No errors found'"], {
+	const errProc = Bun.spawn([...sshArgs, "sudo grep -i -E '(error|fail|fatal)' /var/log/cloud-init-output.log 2>/dev/null | tail -10 || echo 'No errors found'"], {
 		stdout: "pipe",
 		stderr: "pipe",
 	});
@@ -85,7 +87,7 @@ async function main() {
 
 	// Check full runcmd output
 	console.log("\n📋 Full cloud-init output (last 50 lines):");
-	const fullProc = Bun.spawn([...sshArgs, "tail -50 /var/log/cloud-init-output.log 2>/dev/null"], {
+	const fullProc = Bun.spawn([...sshArgs, "sudo tail -50 /var/log/cloud-init-output.log 2>/dev/null"], {
 		stdout: "pipe",
 		stderr: "pipe",
 	});
@@ -95,7 +97,7 @@ async function main() {
 
 	// Check for curl bun.sh output
 	console.log("\n📋 Looking for bun.sh in log:");
-	const bunshProc = Bun.spawn([...sshArgs, "grep -A5 'bun.sh' /var/log/cloud-init-output.log 2>/dev/null || echo 'No bun.sh found in log'"], {
+	const bunshProc = Bun.spawn([...sshArgs, "sudo grep -A5 'bun.sh' /var/log/cloud-init-output.log 2>/dev/null || echo 'No bun.sh found in log'"], {
 		stdout: "pipe",
 		stderr: "pipe",
 	});
@@ -155,13 +157,57 @@ async function main() {
 
 	// Check Caddy status
 	console.log("\n📋 Caddy status:");
-	const caddyProc = Bun.spawn([...sshArgs, "systemctl status caddy 2>&1 | head -10 || true"], {
+	const caddyProc = Bun.spawn([...sshArgs, "sudo systemctl status caddy 2>&1 | head -10 || true"], {
 		stdout: "pipe",
 		stderr: "pipe",
 	});
 	const caddyOutput = await new Response(caddyProc.stdout).text();
 	await caddyProc.exited;
 	console.log(caddyOutput);
+
+	// ===================
+	// SECURITY CHECKS
+	// ===================
+
+	// Check UFW status
+	console.log("\n🔒 UFW Firewall status:");
+	const ufwProc = Bun.spawn([...sshArgs, "sudo ufw status verbose 2>&1 || echo 'UFW not available'"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const ufwOutput = await new Response(ufwProc.stdout).text();
+	await ufwProc.exited;
+	console.log(ufwOutput);
+
+	// Check Fail2ban status
+	console.log("\n🔒 Fail2ban status:");
+	const f2bProc = Bun.spawn([...sshArgs, "sudo fail2ban-client status sshd 2>&1 || echo 'Fail2ban not available'"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const f2bOutput = await new Response(f2bProc.stdout).text();
+	await f2bProc.exited;
+	console.log(f2bOutput);
+
+	// Check SSH hardening
+	console.log("\n🔒 SSH hardening check:");
+	const sshProc = Bun.spawn([...sshArgs, "sudo grep -E '^(PermitRootLogin|PasswordAuthentication|AllowUsers)' /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config 2>/dev/null || echo 'SSH config check failed'"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const sshOutput = await new Response(sshProc.stdout).text();
+	await sshProc.exited;
+	console.log(sshOutput);
+
+	// Check unattended-upgrades
+	console.log("\n🔒 Auto-updates status:");
+	const upgradesProc = Bun.spawn([...sshArgs, "sudo systemctl is-active unattended-upgrades 2>&1 && cat /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null || echo 'Auto-updates not configured'"], {
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const upgradesOutput = await new Response(upgradesProc.stdout).text();
+	await upgradesProc.exited;
+	console.log(upgradesOutput);
 }
 
 main().catch(console.error);
