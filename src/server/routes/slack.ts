@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { config } from "../config";
 import { verifySlackRequest } from "../middleware/slack";
-import { buildAppHomeView, publishAppHome } from "../services/slack";
+import { buildAppHomeView, openTokenModal, publishAppHome } from "../services/slack";
 
 type Env = { Variables: { rawBody: string } };
 
@@ -97,6 +97,36 @@ slack.post("/interactions", verifySlackRequest, async (c) => {
 		case "resume_sharing": {
 			await db.update(schema.users).set({ isSharing: true }).where(eq(schema.users.id, userId));
 			await refreshAppHome(userId, teamId);
+			break;
+		}
+		case "get_extension_token": {
+			const user = await db.query.users.findFirst({
+				where: eq(schema.users.id, userId),
+			});
+
+			if (!user) {
+				break;
+			}
+
+			const workspace = await db.query.workspaces.findFirst({
+				where: eq(schema.workspaces.id, teamId),
+			});
+
+			if (!workspace) {
+				break;
+			}
+
+			// Generate token if needed (same logic as handleTokenCommand)
+			let token = user.extensionToken;
+			if (!token) {
+				token = crypto.randomUUID();
+				await db
+					.update(schema.users)
+					.set({ extensionToken: token })
+					.where(eq(schema.users.id, userId));
+			}
+
+			await openTokenModal(workspace.botAccessToken, payload.trigger_id, token);
 			break;
 		}
 	}

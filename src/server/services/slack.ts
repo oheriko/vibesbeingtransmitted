@@ -187,6 +187,15 @@ export function buildAppHomeView(
 					action_id: toggleAction,
 					style: user.isSharing ? undefined : "primary",
 				},
+				{
+					type: "button",
+					text: {
+						type: "plain_text",
+						text: "Get Extension Token",
+						emoji: true,
+					},
+					action_id: "get_extension_token",
+				},
 			],
 		});
 	}
@@ -232,6 +241,64 @@ export async function publishAppHome(
 
 	if (!data.ok) {
 		console.error(`Failed to publish app home for user ${userId}:`, data.error);
+		return false;
+	}
+
+	return true;
+}
+
+export async function openTokenModal(
+	botToken: string,
+	triggerId: string,
+	token: string
+): Promise<boolean> {
+	const decryptedToken = await decrypt(botToken);
+
+	const response = await fetch("https://slack.com/api/views.open", {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${decryptedToken}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			trigger_id: triggerId,
+			view: {
+				type: "modal",
+				title: { type: "plain_text", text: "Extension Token" },
+				close: { type: "plain_text", text: "Done" },
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: "Copy this token into the Vibes browser extension to connect YouTube Music:",
+						},
+					},
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `\`${token}\``,
+						},
+					},
+					{
+						type: "context",
+						elements: [
+							{
+								type: "mrkdwn",
+								text: "_Keep this token secret - anyone with it can update your status._",
+							},
+						],
+					},
+				],
+			},
+		}),
+	});
+
+	const data = (await response.json()) as SlackApiResponse;
+
+	if (!data.ok) {
+		console.error(`Failed to open token modal:`, data.error);
 		return false;
 	}
 
