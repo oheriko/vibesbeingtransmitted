@@ -60,13 +60,6 @@ export function Landing(_props: LandingProps) {
 						</div>
 					</div>
 					<div style={styles.feature}>
-						<span style={styles.featureIcon}>⏯️</span>
-						<div>
-							<h3 style={styles.featureTitle}>Pause Anytime</h3>
-							<p style={styles.featureText}>Toggle sharing on/off with a single command</p>
-						</div>
-					</div>
-					<div style={styles.feature}>
 						<span style={styles.featureIcon}>🔒</span>
 						<div>
 							<h3 style={styles.featureTitle}>Privacy First</h3>

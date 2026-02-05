@@ -13,9 +13,13 @@ export default defineBackground(() => {
 
 	// Listen for config changes
 	browser.storage.onChanged.addListener((changes, area) => {
-		if (area === "sync" && changes.config) {
+		if (area === "local" && changes.config) {
 			config = { ...DEFAULT_CONFIG, ...changes.config.newValue };
-			console.log("[Vibes] Config updated");
+			console.log("[Vibes] Config updated:", {
+				serverUrl: config.serverUrl,
+				enabled: config.enabled,
+				hasToken: !!config.apiToken,
+			});
 		}
 	});
 
@@ -31,7 +35,7 @@ export default defineBackground(() => {
 });
 
 async function loadConfig(): Promise<void> {
-	const stored = await browser.storage.sync.get("config");
+	const stored = await browser.storage.local.get("config");
 	if (stored.config) {
 		config = { ...DEFAULT_CONFIG, ...stored.config };
 	}

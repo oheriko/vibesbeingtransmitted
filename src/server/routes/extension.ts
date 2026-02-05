@@ -93,4 +93,15 @@ extension.get("/status", async (c) => {
 	});
 });
 
+// Get latest extension version (for update notifications)
+const LATEST_EXTENSION_VERSION = "1.0.0";
+
+extension.get("/version", (c) => {
+	return c.json({
+		version: LATEST_EXTENSION_VERSION,
+		downloadUrl: "https://www.vibesbeingtransmitted.com/vibes-extension.zip",
+		firefoxDownloadUrl: "https://www.vibesbeingtransmitted.com/vibes-extension-firefox.zip",
+	});
+});
+
 export { extension };

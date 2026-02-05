@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ExtensionConfig } from "@/utils/types";
-import { DEFAULT_CONFIG } from "@/utils/types";
+import { DEFAULT_CONFIG, EXTENSION_VERSION } from "@/utils/types";
+
+interface UpdateInfo {
+	available: boolean;
+	latestVersion: string;
+	downloadUrl: string;
+}
 
 export default function App() {
 	const [config, setConfig] = useState<ExtensionConfig>(DEFAULT_CONFIG);
 	const [saved, setSaved] = useState(false);
 	const [status, setStatus] = useState<"disconnected" | "connected" | "error">("disconnected");
+	const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
 	useEffect(() => {
-		browser.storage.sync.get("config").then((result) => {
+		browser.storage.local.get("config").then((result) => {
 			if (result.config) {
 				setConfig({ ...DEFAULT_CONFIG, ...result.config });
 			}
@@ -34,8 +41,32 @@ export default function App() {
 		}
 	}, [config.apiToken, config.serverUrl, checkConnection]);
 
+	// Check for updates
+	useEffect(() => {
+		async function checkForUpdates() {
+			try {
+				const response = await fetch(`${config.serverUrl}/api/extension/version`);
+				if (response.ok) {
+					const data = await response.json();
+					if (data.version !== EXTENSION_VERSION) {
+						setUpdateInfo({
+							available: true,
+							latestVersion: data.version,
+							downloadUrl: data.downloadUrl,
+						});
+					}
+				}
+			} catch {
+				// Ignore update check failures
+			}
+		}
+		if (config.serverUrl) {
+			checkForUpdates();
+		}
+	}, [config.serverUrl]);
+
 	async function saveConfig() {
-		await browser.storage.sync.set({ config });
+		await browser.storage.local.set({ config });
 		setSaved(true);
 		setTimeout(() => setSaved(false), 2000);
 	}
@@ -47,6 +78,17 @@ export default function App() {
 	return (
 		<div className="container">
 			<h1 className="title">Vibes Being Transmitted</h1>
+
+			{updateInfo?.available && (
+				<a
+					href={updateInfo.downloadUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="update-banner"
+				>
+					Update available: v{updateInfo.latestVersion} — Click to download
+				</a>
+			)}
 
 			<div className="status">
 				<span
@@ -108,6 +150,7 @@ export default function App() {
 			</button>
 
 			<p className="hint">Open YouTube Music and play something to test.</p>
+			<p className="version">v{EXTENSION_VERSION}</p>
 		</div>
 	);
 }

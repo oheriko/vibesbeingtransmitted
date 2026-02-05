@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
+
+  <!-- Wave 1 - thicker for icon visibility -->
+  <path d="M 4 10 Q 8 4, 12 10 Q 16 16, 20 10 Q 24 4, 28 10" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Wave 2 -->
+  <path d="M 4 16 Q 8 10, 12 16 Q 16 22, 20 16 Q 24 10, 28 16" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Wave 3 -->
+  <path d="M 4 22 Q 8 16, 12 22 Q 16 28, 20 22 Q 24 16, 28 22" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</svg>

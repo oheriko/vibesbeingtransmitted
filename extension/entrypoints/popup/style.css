@@ -86,3 +86,26 @@ body {
 	text-align: center;
 	margin-top: 12px;
 }
+
+.update-banner {
+	display: block;
+	background-color: #4a154b;
+	color: white;
+	padding: 8px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	text-align: center;
+	text-decoration: none;
+	margin-bottom: 12px;
+}
+
+.update-banner:hover {
+	background-color: #611f69;
+}
+
+.version {
+	font-size: 10px;
+	color: #555;
+	text-align: center;
+	margin-top: 8px;
+}

@@ -1,3 +1,5 @@
+export const EXTENSION_VERSION = "1.0.0";
+
 export interface NowPlaying {
 	source: "youtube-music" | "spotify";
 	title: string;
