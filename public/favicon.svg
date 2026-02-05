@@ -1,11 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
 
-  <!-- Broadcast point -->
-  <circle cx="6" cy="16" r="2" fill="white"/>
+  <!-- Sine wave 1 (top) -->
+  <path d="M 4 10 Q 8 6, 12 10 T 20 10 T 28 10" stroke="white" stroke-width="1" fill="none"/>
 
-  <!-- Wave signals emanating outward -->
-  <path d="M 10 16 Q 14 10, 18 16 Q 14 22, 10 16" stroke="white" stroke-width="1" fill="none"/>
-  <path d="M 14 16 Q 18 8, 22 16 Q 18 24, 14 16" stroke="white" stroke-width="1" fill="none"/>
-  <path d="M 18 16 Q 22 6, 26 16 Q 22 26, 18 16" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Sine wave 2 (middle) -->
+  <path d="M 4 16 Q 8 12, 12 16 T 20 16 T 28 16" stroke="white" stroke-width="1" fill="none"/>
+
+  <!-- Sine wave 3 (bottom) -->
+  <path d="M 4 22 Q 8 18, 12 22 T 20 22 T 28 22" stroke="white" stroke-width="1" fill="none"/>
+
+  <!-- Circle on middle wave -->
+  <circle cx="4" cy="16" r="2" fill="white"/>
 </svg>
