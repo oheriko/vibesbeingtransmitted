@@ -9,6 +9,7 @@ export function Landing(_props: LandingProps) {
 		<div style={styles.page}>
 			{/* Hero Section */}
 			<header style={styles.hero}>
+				<img src="/favicon.svg" alt="Vibes logo" style={styles.heroIcon} />
 				<h1 style={styles.logo}>Vibes Being Transmitted</h1>
 				<p style={styles.tagline}>Share what you're listening to with your Slack team</p>
 				<p style={styles.subtitle}>
@@ -153,6 +154,12 @@ const styles: Record<string, React.CSSProperties> = {
 		textAlign: "center",
 		padding: "80px 20px",
 		background: "linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%)",
+	},
+	heroIcon: {
+		width: "96px",
+		height: "96px",
+		marginBottom: "24px",
+		borderRadius: "12px",
 	},
 	logo: {
 		fontFamily: '"ZamenhofInline", serif',
