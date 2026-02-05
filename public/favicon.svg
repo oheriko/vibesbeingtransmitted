@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <rect width="32" height="32" fill="#4b1c4c" rx="4"/>
 
-  <!-- Curved wave 1 -->
-  <path d="M 4 10 Q 16 22, 28 10" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Heartbeat wave 1 -->
+  <path d="M 4 9 L 10 4 L 16 14 L 22 4 L 28 9" stroke="white" stroke-width="1" fill="none"/>
 
-  <!-- Curved wave 2 -->
-  <path d="M 4 16 Q 16 28, 28 16" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Heartbeat wave 2 -->
+  <path d="M 4 16 L 10 11 L 16 21 L 22 11 L 28 16" stroke="white" stroke-width="1" fill="none"/>
 
-  <!-- Curved wave 3 -->
-  <path d="M 4 22 Q 16 34, 28 22" stroke="white" stroke-width="1" fill="none"/>
+  <!-- Heartbeat wave 3 -->
+  <path d="M 4 23 L 10 18 L 16 28 L 22 18 L 28 23" stroke="white" stroke-width="1" fill="none"/>
 </svg>
