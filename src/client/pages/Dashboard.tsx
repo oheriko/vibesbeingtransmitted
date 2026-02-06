@@ -394,7 +394,7 @@ const styles: Record<string, React.CSSProperties> = {
 	navLogo: {
 		color: "#eee",
 		textDecoration: "none",
-		fontWeight: "bold",
+		fontFamily: '"ZamenhofInline", serif',
 		fontSize: "1rem",
 	},
 	navSignOut: {
