@@ -1,6 +1,6 @@
 import { db, schema } from "@db/index";
 import type { User } from "@db/schema";
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { clearUserStatus, setUserStatus } from "./slack";
 import { getPlaybackState } from "./spotify";
 
@@ -54,6 +54,7 @@ async function pollBatch(): Promise<void> {
 	const users = await db.query.users.findMany({
 		where: and(
 			eq(schema.users.isSharing, true),
+			isNotNull(schema.users.spotifyAccessToken),
 			lt(schema.users.pollErrorCount, MAX_ERROR_COUNT),
 			or(isNull(schema.users.lastPolledAt), lt(schema.users.lastPolledAt, minPollTime))
 		),

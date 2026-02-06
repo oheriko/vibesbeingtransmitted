@@ -1,6 +1,5 @@
 import { defineConfig } from "wxt";
-
-export const EXTENSION_VERSION = "1.0.0";
+import { EXTENSION_VERSION } from "./utils/types";
 
 export default defineConfig({
 	modules: ["@wxt-dev/module-react"],

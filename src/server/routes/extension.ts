@@ -1,6 +1,7 @@
 import { db, schema } from "@db/index";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { hashToken } from "../services/crypto";
 import { setUserStatus } from "../services/slack";
 
 const extension = new Hono();
@@ -18,12 +19,13 @@ interface NowPlayingPayload {
 	timestamp: number;
 }
 
-// Middleware to validate extension token
+// Validate extension token by comparing SHA-256 hash
 async function getUser(token: string | undefined) {
 	if (!token) return null;
 
+	const hashed = hashToken(token);
 	const user = await db.query.users.findFirst({
-		where: eq(schema.users.extensionToken, token),
+		where: eq(schema.users.extensionToken, hashed),
 	});
 
 	return user;
@@ -42,7 +44,38 @@ extension.post("/now-playing", async (c) => {
 		return c.json({ ok: true, message: "Sharing disabled" });
 	}
 
-	const body = await c.req.json<NowPlayingPayload>();
+	let body: NowPlayingPayload;
+	try {
+		body = await c.req.json<NowPlayingPayload>();
+	} catch {
+		return c.json({ error: "Invalid JSON" }, 400);
+	}
+
+	// Validate payload types
+	if (typeof body.isPlaying !== "boolean" || typeof body.timestamp !== "number") {
+		return c.json(
+			{ error: "Invalid payload: isPlaying must be boolean, timestamp must be number" },
+			400
+		);
+	}
+
+	if (body.track !== null && body.track !== undefined) {
+		const { track } = body;
+		if (
+			typeof track.title !== "string" ||
+			typeof track.artist !== "string" ||
+			typeof track.source !== "string"
+		) {
+			return c.json({ error: "Invalid track fields" }, 400);
+		}
+		if (track.title.length > 500 || track.artist.length > 500) {
+			return c.json({ error: "Track title/artist too long (max 500)" }, 400);
+		}
+		if (track.url && track.url.length > 2000) {
+			return c.json({ error: "Track URL too long (max 2000)" }, 400);
+		}
+	}
+
 	const { track, isPlaying } = body;
 
 	// Build a track object compatible with our Slack service

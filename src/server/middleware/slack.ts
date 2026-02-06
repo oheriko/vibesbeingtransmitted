@@ -1,3 +1,4 @@
+import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import type { Context, Next } from "hono";
 import { config } from "../config";
 
@@ -41,21 +42,17 @@ export async function verifySlackRequest(c: Context, next: Next): Promise<Respon
 	);
 	const expectedSignature = `${SLACK_SIGNATURE_VERSION}=${Buffer.from(signatureBuffer).toString("hex")}`;
 
-	// Constant-time comparison
-	if (!timingSafeEqual(signature, expectedSignature)) {
+	// Constant-time comparison (use crypto.timingSafeEqual with dummy on length mismatch)
+	const sigBuf = Buffer.from(signature);
+	const expectedBuf = Buffer.from(expectedSignature);
+	if (sigBuf.length !== expectedBuf.length) {
+		// Perform dummy comparison to prevent timing leak on length mismatch
+		cryptoTimingSafeEqual(expectedBuf, expectedBuf);
+		return c.json({ error: "Invalid signature" }, 401);
+	}
+	if (!cryptoTimingSafeEqual(sigBuf, expectedBuf)) {
 		return c.json({ error: "Invalid signature" }, 401);
 	}
 
 	await next();
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-	if (a.length !== b.length) {
-		return false;
-	}
-	let result = 0;
-	for (let i = 0; i < a.length; i++) {
-		result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-	}
-	return result === 0;
 }
