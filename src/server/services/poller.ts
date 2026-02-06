@@ -81,12 +81,12 @@ async function pollUser(user: User): Promise<void> {
 		const playback = await getPlaybackState(user);
 		const spotifyIsPlaying = playback?.is_playing ?? false;
 
-		// Skip Spotify polling if user is actively using YouTube Music extension
-		// (extension updated within last 2 minutes) AND Spotify isn't playing
-		if (!spotifyIsPlaying && user.lastSource === "youtube-music" && user.lastPolledAt) {
-			const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-			if (user.lastPolledAt > twoMinutesAgo) {
-				console.log(`User ${user.id}: Skipping, YouTube Music active and Spotify not playing`);
+		// Skip Spotify polling if the YT Music extension wrote recently (last 30s).
+		// This prevents the two sources from fighting over the Slack status.
+		if (user.lastSource === "youtube-music" && user.lastPolledAt) {
+			const gracePeriod = new Date(Date.now() - 30_000);
+			if (user.lastPolledAt > gracePeriod) {
+				console.log(`User ${user.id}: Skipping, YouTube Music active recently`);
 				return;
 			}
 		}
