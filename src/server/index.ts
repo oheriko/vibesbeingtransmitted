@@ -82,7 +82,6 @@ const server = Bun.serve({
 		"/support": supportPage,
 	},
 	fetch: app.fetch,
-	development: process.env.NODE_ENV !== "production",
 });
 
 console.log(`Server running at http://localhost:${server.port}`);
