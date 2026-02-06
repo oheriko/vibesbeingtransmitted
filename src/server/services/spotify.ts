@@ -5,7 +5,10 @@ import { eq } from "drizzle-orm";
 import { config } from "../config";
 import { decrypt, encrypt } from "./crypto";
 
-export async function getPlaybackState(user: User): Promise<SpotifyPlaybackState | null> {
+export async function getPlaybackState(
+	user: User,
+	retried = false
+): Promise<SpotifyPlaybackState | null> {
 	if (!user.spotifyAccessToken) {
 		return null;
 	}
@@ -31,18 +34,19 @@ export async function getPlaybackState(user: User): Promise<SpotifyPlaybackState
 		return null;
 	}
 
-	// 401 = token expired, try refresh
-	if (response.status === 401) {
+	// 401 = token expired, try refresh (only once)
+	if (response.status === 401 && !retried) {
 		const refreshed = await refreshToken(user);
 		if (refreshed) {
-			return getPlaybackState(user); // Retry with new token
+			return getPlaybackState(user, true);
 		}
 		return null;
 	}
 
 	if (!response.ok) {
-		console.error(`Spotify API error for user ${user.id}: ${response.status}`);
-		return null;
+		// 403 = forbidden (revoked access, app quota exceeded, etc.)
+		// Throw so the poller increments error count and eventually stops polling
+		throw new Error(`Spotify API error ${response.status} for user ${user.id}`);
 	}
 
 	return (await response.json()) as SpotifyPlaybackState;
