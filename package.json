@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun run --hot src/server/index.ts",
-		"build": "bun build ./src/client/index.tsx --outdir ./dist/client --minify && cp src/client/index.html dist/client/ && cp -r public/* dist/client/",
+		"build": "echo 'Client bundled by Bun.serve at runtime'",
 		"start": "bun run src/server/index.ts",
 		"test": "bun test",
 		"lint": "biome check .",

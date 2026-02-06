@@ -4,6 +4,10 @@ import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import dashboardPage from "../client/pages/dashboard.html";
+import homepage from "../client/pages/index.html";
+import privacyPage from "../client/pages/privacy.html";
+import supportPage from "../client/pages/support.html";
 import { auth as betterAuth } from "./auth";
 import { config } from "./config";
 import { rateLimit } from "./middleware/rateLimit";
@@ -62,11 +66,8 @@ app.route("/slack", slack);
 app.route("/api", api);
 app.route("/api/extension", extension);
 
-// Serve static files from dist/client for production
-app.use("/*", serveStatic({ root: "./dist/client" }));
-
-// Fallback to index.html for SPA routing
-app.get("/*", serveStatic({ path: "./dist/client/index.html" }));
+// Serve static files from public/ (fonts, favicon, extension zips)
+app.use("/*", serveStatic({ root: "./public" }));
 
 // Start background poller
 startPoller();
@@ -74,7 +75,14 @@ startPoller();
 // Start server
 const server = Bun.serve({
 	port: config.port,
+	routes: {
+		"/": homepage,
+		"/dashboard": dashboardPage,
+		"/privacy": privacyPage,
+		"/support": supportPage,
+	},
 	fetch: app.fetch,
+	development: process.env.NODE_ENV !== "production",
 });
 
 console.log(`Server running at http://localhost:${server.port}`);

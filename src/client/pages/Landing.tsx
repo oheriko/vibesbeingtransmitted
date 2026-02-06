@@ -1,10 +1,8 @@
 import { authClient } from "../auth";
 
-interface LandingProps {
-	isSignedIn: boolean;
-}
-
-export function Landing({ isSignedIn }: LandingProps) {
+export function Landing() {
+	const { data: session, isPending } = authClient.useSession();
+	const isSignedIn = !isPending && !!session;
 	const slackAuthUrl = "/auth/slack";
 
 	return (
@@ -176,42 +174,18 @@ export function Landing({ isSignedIn }: LandingProps) {
 				</div>
 			</section>
 
-			{/* Privacy Policy */}
-			<section id="privacy" style={{ ...styles.section, ...styles.sectionAlt }}>
-				<h2 style={styles.sectionTitle}>Privacy Policy</h2>
-				<div style={styles.privacyContent}>
-					<p style={styles.privacyText}>
-						<strong>What we collect:</strong> Your Slack user ID and workspace ID, Slack access
-						tokens (to update your status), and Spotify/YouTube Music tokens (to see what's
-						playing). We also store the current track name temporarily.
-					</p>
-					<p style={styles.privacyText}>
-						<strong>What we don't do:</strong> We don't store your listening history, share your
-						data with third parties, or access anything beyond your playback status and Slack
-						profile.
-					</p>
-					<p style={styles.privacyText}>
-						<strong>Data storage:</strong> All tokens are encrypted at rest. You can disconnect at
-						any time by removing the app from Slack, which deletes all your data.
-					</p>
-					<p style={styles.privacyText}>
-						<strong>Open source:</strong> This app is fully open source. You can review the code on{" "}
-						<a
-							href="https://github.com/oheriko/vibesbeingtransmitted"
-							style={styles.link}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							GitHub
-						</a>
-						.
-					</p>
-				</div>
-			</section>
-
 			{/* Footer */}
 			<footer style={styles.footer}>
-				<p>Made with 🎵 for music lovers everywhere</p>
+				<p style={styles.footerText}>Made with 🎵 for music lovers everywhere</p>
+				<div style={styles.footerLinks}>
+					<a href="/privacy" style={styles.footerLink}>
+						Privacy
+					</a>
+					<span style={styles.footerDot}>&middot;</span>
+					<a href="/support" style={styles.footerLink}>
+						Support
+					</a>
+				</div>
 			</footer>
 		</div>
 	);
@@ -416,14 +390,22 @@ const styles: Record<string, React.CSSProperties> = {
 		color: "#666",
 		borderTop: "1px solid #222",
 	},
-	privacyContent: {
-		maxWidth: "700px",
-		margin: "0 auto",
+	footerText: {
+		marginBottom: "12px",
 	},
-	privacyText: {
-		color: "#aaa",
-		lineHeight: "1.7",
-		marginBottom: "16px",
-		fontSize: "0.95rem",
+	footerLinks: {
+		display: "flex",
+		justifyContent: "center",
+		alignItems: "center",
+		gap: "0",
+	},
+	footerLink: {
+		color: "#666",
+		textDecoration: "none",
+		fontSize: "0.9rem",
+	},
+	footerDot: {
+		margin: "0 8px",
+		color: "#444",
 	},
 };

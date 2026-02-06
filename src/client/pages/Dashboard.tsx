@@ -1,12 +1,9 @@
 import type { UserStatus } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
+import { authClient } from "../auth";
 
-interface DashboardProps {
-	isSignedIn: boolean;
-	onLogout: () => void;
-}
-
-export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
+export function Dashboard() {
+	const { data: session, isPending } = authClient.useSession();
 	const [status, setStatus] = useState<UserStatus | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -14,6 +11,13 @@ export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 	const params = new URLSearchParams(window.location.search);
 	const justInstalled = params.has("installed");
 	const spotifyConnected = params.has("spotify");
+
+	const isSignedIn = !!session;
+
+	const handleLogout = useCallback(async () => {
+		await authClient.signOut();
+		window.location.href = "/";
+	}, []);
 
 	const fetchStatus = useCallback(async () => {
 		try {
@@ -23,7 +27,7 @@ export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 
 			if (!res.ok) {
 				if (res.status === 401) {
-					onLogout();
+					handleLogout();
 					return;
 				}
 				throw new Error("Failed to fetch status");
@@ -35,15 +39,18 @@ export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 		} finally {
 			setLoading(false);
 		}
-	}, [onLogout]);
+	}, [handleLogout]);
 
 	useEffect(() => {
+		if (isPending) return;
 		if (isSignedIn) {
 			fetchStatus();
+		} else if (!justInstalled && !spotifyConnected) {
+			window.location.href = "/";
 		} else {
 			setLoading(false);
 		}
-	}, [isSignedIn, fetchStatus]);
+	}, [isPending, isSignedIn, fetchStatus, justInstalled, spotifyConnected]);
 
 	async function toggleSharing() {
 		if (!status) return;
@@ -94,7 +101,7 @@ export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 		}
 	}
 
-	if (loading) {
+	if (isPending || loading) {
 		return (
 			<div style={styles.container}>
 				<div style={styles.content}>
@@ -204,7 +211,7 @@ export function Dashboard({ isSignedIn, onLogout }: DashboardProps) {
 					</>
 				) : null}
 
-				<button type="button" onClick={onLogout} style={styles.link}>
+				<button type="button" onClick={handleLogout} style={styles.link}>
 					Sign out
 				</button>
 			</div>
