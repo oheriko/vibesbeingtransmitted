@@ -1,5 +1,5 @@
 import { db, schema } from "@db/index";
-import type { UserStatus } from "@shared/types";
+import type { DashboardStatus } from "@shared/types";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { config } from "../config";
@@ -16,7 +16,7 @@ api.use("/spotify/*", requireSession);
 api.get("/user/status", async (c) => {
 	const user = getDomainUser(c);
 
-	const status: UserStatus = {
+	const status: DashboardStatus = {
 		isConnected: !!user.spotifyAccessToken,
 		isSharing: user.isSharing,
 		currentTrack: user.lastTrackName
@@ -26,6 +26,9 @@ api.get("/user/status", async (c) => {
 					isPlaying: user.isCurrentlyPlaying ?? false,
 				}
 			: null,
+		lastSource: user.lastSource ?? null,
+		lastUpdated: user.lastPolledAt?.toISOString() ?? null,
+		hasExtensionToken: !!user.extensionToken,
 	};
 
 	return c.json(status);

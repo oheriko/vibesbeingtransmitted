@@ -1,18 +1,32 @@
-import type { UserStatus } from "@shared/types";
-import { useCallback, useEffect, useState } from "react";
+import type { DashboardStatus } from "@shared/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "../auth";
+
+function timeAgo(iso: string): string {
+	const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+	if (seconds < 5) return "just now";
+	if (seconds < 60) return `${seconds}s ago`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes}m ago`;
+	const hours = Math.floor(minutes / 60);
+	return `${hours}h ago`;
+}
 
 export function Dashboard() {
 	const { data: session, isPending } = authClient.useSession();
-	const [status, setStatus] = useState<UserStatus | null>(null);
+	const [status, setStatus] = useState<DashboardStatus | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [agoText, setAgoText] = useState("");
+	const [pulseOn, setPulseOn] = useState(true);
 
 	const params = new URLSearchParams(window.location.search);
 	const justInstalled = params.has("installed");
 	const spotifyConnected = params.has("spotify");
 
 	const isSignedIn = !!session;
+	const statusRef = useRef(status);
+	statusRef.current = status;
 
 	const handleLogout = useCallback(async () => {
 		await authClient.signOut();
@@ -24,7 +38,6 @@ export function Dashboard() {
 			const res = await fetch("/api/user/status", {
 				credentials: "include",
 			});
-
 			if (!res.ok) {
 				if (res.status === 401) {
 					handleLogout();
@@ -32,8 +45,9 @@ export function Dashboard() {
 				}
 				throw new Error("Failed to fetch status");
 			}
-
-			setStatus(await res.json());
+			const data: DashboardStatus = await res.json();
+			setStatus(data);
+			if (data.lastUpdated) setAgoText(timeAgo(data.lastUpdated));
 		} catch {
 			setError("Failed to load status");
 		} finally {
@@ -41,20 +55,38 @@ export function Dashboard() {
 		}
 	}, [handleLogout]);
 
+	// Initial fetch + 10s polling
 	useEffect(() => {
 		if (isPending) return;
 		if (isSignedIn) {
 			fetchStatus();
-		} else if (!justInstalled && !spotifyConnected) {
+			const interval = setInterval(fetchStatus, 10_000);
+			return () => clearInterval(interval);
+		}
+		if (!justInstalled && !spotifyConnected) {
 			window.location.href = "/";
 		} else {
 			setLoading(false);
 		}
 	}, [isPending, isSignedIn, fetchStatus, justInstalled, spotifyConnected]);
 
+	// Tick "Updated Xs ago" every second
+	useEffect(() => {
+		const interval = setInterval(() => {
+			const s = statusRef.current;
+			if (s?.lastUpdated) setAgoText(timeAgo(s.lastUpdated));
+		}, 1_000);
+		return () => clearInterval(interval);
+	}, []);
+
+	// Pulse animation via state toggle
+	useEffect(() => {
+		const interval = setInterval(() => setPulseOn((v) => !v), 1_000);
+		return () => clearInterval(interval);
+	}, []);
+
 	async function toggleSharing() {
 		if (!status) return;
-
 		try {
 			const res = await fetch("/api/user/sharing", {
 				method: "POST",
@@ -62,7 +94,6 @@ export function Dashboard() {
 				credentials: "include",
 				body: JSON.stringify({ isSharing: !status.isSharing }),
 			});
-
 			if (res.ok) {
 				setStatus({ ...status, isSharing: !status.isSharing });
 			}
@@ -76,7 +107,6 @@ export function Dashboard() {
 			const res = await fetch("/api/spotify/connect-url", {
 				credentials: "include",
 			});
-
 			if (res.ok) {
 				const { url } = await res.json();
 				window.location.href = url;
@@ -92,9 +122,15 @@ export function Dashboard() {
 				method: "POST",
 				credentials: "include",
 			});
-
 			if (res.ok) {
-				setStatus({ isConnected: false, isSharing: false, currentTrack: null });
+				setStatus({
+					isConnected: false,
+					isSharing: false,
+					currentTrack: null,
+					lastSource: null,
+					lastUpdated: null,
+					hasExtensionToken: status?.hasExtensionToken ?? false,
+				});
 			}
 		} catch {
 			setError("Failed to disconnect");
@@ -103,9 +139,9 @@ export function Dashboard() {
 
 	if (isPending || loading) {
 		return (
-			<div style={styles.container}>
-				<div style={styles.content}>
-					<p>Loading...</p>
+			<div style={styles.page}>
+				<div style={styles.container}>
+					<p style={{ color: "#888" }}>Loading...</p>
 				</div>
 			</div>
 		);
@@ -114,224 +150,435 @@ export function Dashboard() {
 	// No session — show post-install / post-connect message
 	if (!isSignedIn) {
 		return (
-			<div style={styles.container}>
-				<div style={styles.content}>
-					<h1 style={styles.title}>🎵 Vibes Being Transmitted</h1>
-
-					{justInstalled && <div style={styles.successBanner}>✅ App installed successfully!</div>}
-
+			<div style={styles.page}>
+				<div style={styles.container}>
+					<h1 style={{ fontSize: "1.5rem", marginBottom: "1.5rem", textAlign: "center" as const }}>
+						Vibes Being Transmitted
+					</h1>
+					{justInstalled && <div style={styles.successBanner}>App installed successfully!</div>}
 					{spotifyConnected && (
-						<div style={styles.successBanner}>
-							✅ Spotify connected! Your status will now update.
-						</div>
+						<div style={styles.successBanner}>Spotify connected! Your status will now update.</div>
 					)}
-
-					<p style={styles.text}>
+					<p style={{ fontSize: "1.1rem", lineHeight: "1.6", marginBottom: "1.5rem" }}>
 						Use the <strong>/vibes</strong> command in Slack or visit the App Home tab to manage
 						your settings.
 					</p>
-
-					<div style={styles.commands}>
-						<h3>Quick Commands:</h3>
-						<ul>
-							<li>
-								<code>/vibes connect</code> - Connect Spotify
-							</li>
-							<li>
-								<code>/vibes pause</code> - Pause sharing
-							</li>
-							<li>
-								<code>/vibes resume</code> - Resume sharing
-							</li>
-							<li>
-								<code>/vibes status</code> - Check status
-							</li>
-						</ul>
-					</div>
-
-					<a href="/" style={styles.link}>
-						← Back to home
+					<a href="/" style={styles.footerLink}>
+						&larr; Back to home
 					</a>
 				</div>
 			</div>
 		);
 	}
 
+	const sourceLabel =
+		status?.lastSource === "youtube-music"
+			? "YouTube Music"
+			: status?.lastSource === "spotify"
+				? "Spotify"
+				: null;
+	const sourceColor = status?.lastSource === "youtube-music" ? "#ff0000" : "#1db954";
+
+	const isPlaying = status?.currentTrack?.isPlaying ?? false;
+	const setupDone = status?.isConnected ?? false;
+
 	return (
-		<div style={styles.container}>
-			<div style={styles.content}>
-				<h1 style={styles.title}>🎵 Dashboard</h1>
-
-				{error && <div style={styles.errorBanner}>{error}</div>}
-
-				{status && !status.isConnected ? (
-					<div style={styles.card}>
-						<h2>Connect Spotify</h2>
-						<p>Link your Spotify account to start sharing what you're listening to.</p>
-						<button type="button" onClick={connectSpotify} style={styles.primaryButton}>
-							Connect Spotify
-						</button>
-					</div>
-				) : status ? (
-					<>
-						<div style={styles.card}>
-							<h2>Status</h2>
-							<div style={styles.statusRow}>
-								<span>{status.isSharing ? "🟢" : "⏸️"}</span>
-								<span>{status.isSharing ? "Sharing enabled" : "Sharing paused"}</span>
-							</div>
-
-							{status.currentTrack && (
-								<div style={styles.nowPlaying}>
-									<span>🎵</span>
-									<span>
-										{status.currentTrack.name} - {status.currentTrack.artist}
-									</span>
-									<span style={styles.playingStatus}>
-										{status.currentTrack.isPlaying ? "▶️ Playing" : "⏸️ Paused"}
-									</span>
-								</div>
-							)}
-
-							<button
-								type="button"
-								onClick={toggleSharing}
-								style={status.isSharing ? styles.secondaryButton : styles.primaryButton}
-							>
-								{status.isSharing ? "Pause Sharing" : "Resume Sharing"}
-							</button>
-						</div>
-
-						<div style={styles.card}>
-							<h2>Settings</h2>
-							<button type="button" onClick={disconnectSpotify} style={styles.dangerButton}>
-								Disconnect Spotify
-							</button>
-						</div>
-					</>
-				) : null}
-
-				<button type="button" onClick={handleLogout} style={styles.link}>
+		<div style={styles.page}>
+			{/* Nav bar */}
+			<nav style={styles.nav}>
+				<a href="/" style={styles.navLogo}>
+					Vibes Being Transmitted
+				</a>
+				<button type="button" onClick={handleLogout} style={styles.navSignOut}>
 					Sign out
 				</button>
+			</nav>
+
+			<div style={styles.container}>
+				{error && <div style={styles.errorBanner}>{error}</div>}
+				{justInstalled && <div style={styles.successBanner}>App installed successfully!</div>}
+				{spotifyConnected && (
+					<div style={styles.successBanner}>Spotify connected! Your status will now update.</div>
+				)}
+
+				{/* NOW PLAYING hero card */}
+				<div style={styles.card}>
+					<div style={styles.cardHeader}>
+						<span style={styles.cardLabel}>NOW PLAYING</span>
+						{status?.currentTrack && (
+							<span
+								style={{
+									...styles.statusBadge,
+									backgroundColor: isPlaying ? "rgba(29,185,84,0.15)" : "rgba(102,102,102,0.15)",
+									color: isPlaying ? "#1db954" : "#666",
+								}}
+							>
+								<span
+									style={{
+										display: "inline-block",
+										width: 8,
+										height: 8,
+										borderRadius: "50%",
+										backgroundColor: isPlaying ? "#1db954" : "#666",
+										marginRight: 6,
+										opacity: isPlaying ? (pulseOn ? 1 : 0.3) : 1,
+										transition: "opacity 0.5s ease",
+									}}
+								/>
+								{isPlaying ? "Playing" : "Paused"}
+							</span>
+						)}
+					</div>
+
+					{status?.currentTrack ? (
+						<div style={{ marginTop: 16 }}>
+							<div style={styles.trackName}>{status.currentTrack.name}</div>
+							<div style={styles.artistName}>{status.currentTrack.artist}</div>
+							<div style={styles.nowPlayingMeta}>
+								{sourceLabel && (
+									<span style={{ ...styles.sourceBadge, color: sourceColor }}>
+										via {sourceLabel}
+									</span>
+								)}
+								{agoText && (
+									<span style={styles.updatedText}>
+										{sourceLabel ? " · " : ""}Updated {agoText}
+									</span>
+								)}
+							</div>
+						</div>
+					) : (
+						<div style={{ marginTop: 16 }}>
+							<div style={styles.artistName}>Nothing playing right now</div>
+							{agoText && (
+								<div style={{ ...styles.updatedText, marginTop: 8 }}>Last checked {agoText}</div>
+							)}
+						</div>
+					)}
+
+					<div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+						<button
+							type="button"
+							onClick={toggleSharing}
+							style={status?.isSharing ? styles.secondaryButton : styles.primaryButton}
+						>
+							{status?.isSharing ? "Pause Sharing" : "Resume Sharing"}
+						</button>
+					</div>
+				</div>
+
+				{/* Connection cards */}
+				<div style={styles.cardGrid}>
+					{/* Spotify card */}
+					<div style={styles.halfCard}>
+						<span style={styles.cardLabel}>SPOTIFY</span>
+						<div style={styles.connectionStatus}>
+							<span
+								style={{
+									display: "inline-block",
+									width: 8,
+									height: 8,
+									borderRadius: "50%",
+									backgroundColor: status?.isConnected ? "#1db954" : "#666",
+									marginRight: 8,
+								}}
+							/>
+							{status?.isConnected ? "Connected" : "Not connected"}
+						</div>
+						{status?.isConnected ? (
+							<button type="button" onClick={disconnectSpotify} style={styles.dangerButton}>
+								Disconnect
+							</button>
+						) : (
+							<button type="button" onClick={connectSpotify} style={styles.primaryButton}>
+								Connect
+							</button>
+						)}
+					</div>
+
+					{/* YouTube Music card */}
+					<div style={styles.halfCard}>
+						<span style={styles.cardLabel}>YOUTUBE MUSIC</span>
+						<div style={styles.connectionStatus}>
+							<span
+								style={{
+									display: "inline-block",
+									width: 8,
+									height: 8,
+									borderRadius: "50%",
+									backgroundColor: status?.hasExtensionToken ? "#1db954" : "#666",
+									marginRight: 8,
+								}}
+							/>
+							Extension: {status?.hasExtensionToken ? "Active" : "Not configured"}
+						</div>
+						<div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginTop: 4 }}>
+							{!status?.hasExtensionToken && (
+								<span style={styles.hintText}>
+									Use <strong>/vibes token</strong> in Slack
+								</span>
+							)}
+							<div style={{ display: "flex", gap: 8 }}>
+								<a href="/vibes-extension.zip" download style={styles.smallButton}>
+									Chrome
+								</a>
+								<a href="/vibes-extension-firefox.zip" download style={styles.smallButton}>
+									Firefox
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Setup checklist — only when Spotify not connected */}
+				{!setupDone && (
+					<div style={styles.setupBar}>
+						<span style={styles.cardLabel}>SETUP</span>
+						<div style={styles.setupSteps}>
+							<span style={styles.setupStep}>
+								<span style={{ color: "#1db954" }}>&#10003;</span> Slack
+							</span>
+							<span style={styles.setupDot}>&middot;</span>
+							<span style={styles.setupStep}>
+								{status?.isConnected ? (
+									<span style={{ color: "#1db954" }}>&#10003;</span>
+								) : (
+									<span style={{ color: "#666" }}>&#9675;</span>
+								)}{" "}
+								Spotify
+							</span>
+							<span style={styles.setupDot}>&middot;</span>
+							<span style={styles.setupStep}>
+								{status?.hasExtensionToken ? (
+									<span style={{ color: "#1db954" }}>&#10003;</span>
+								) : (
+									<span style={{ color: "#666" }}>&#9675;</span>
+								)}{" "}
+								Extension
+							</span>
+						</div>
+					</div>
+				)}
+
+				{/* Footer */}
+				<footer style={styles.footer}>
+					<a href="/" style={styles.footerLink}>
+						Home
+					</a>
+					<span style={styles.footerDot}>&middot;</span>
+					<a href="/privacy" style={styles.footerLink}>
+						Privacy
+					</a>
+				</footer>
 			</div>
 		</div>
 	);
 }
 
 const styles: Record<string, React.CSSProperties> = {
-	container: {
+	page: {
 		minHeight: "100vh",
-		display: "flex",
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: "#1a1a2e",
+		backgroundColor: "#0f0f1a",
 		color: "#eee",
 		fontFamily: "system-ui, -apple-system, sans-serif",
-		padding: "20px",
 	},
-	content: {
-		maxWidth: "500px",
-		width: "100%",
+	nav: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		padding: "16px 24px",
+		borderBottom: "1px solid #1a1a2e",
+		maxWidth: 800,
+		margin: "0 auto",
 	},
-	title: {
-		fontSize: "2rem",
-		marginBottom: "1.5rem",
-		textAlign: "center",
+	navLogo: {
+		color: "#eee",
+		textDecoration: "none",
+		fontWeight: "bold",
+		fontSize: "1rem",
 	},
-	text: {
-		fontSize: "1.1rem",
-		lineHeight: "1.6",
-		marginBottom: "1.5rem",
+	navSignOut: {
+		background: "none",
+		border: "1px solid #333",
+		color: "#888",
+		padding: "6px 14px",
+		borderRadius: 6,
+		cursor: "pointer",
+		fontSize: "0.85rem",
+	},
+	container: {
+		maxWidth: 800,
+		margin: "0 auto",
+		padding: "24px 20px",
 	},
 	card: {
-		backgroundColor: "#252542",
-		borderRadius: "12px",
-		padding: "24px",
-		marginBottom: "16px",
-	},
-	statusRow: {
-		display: "flex",
-		alignItems: "center",
-		gap: "12px",
-		fontSize: "1.2rem",
-		marginBottom: "16px",
-	},
-	nowPlaying: {
-		display: "flex",
-		alignItems: "center",
-		gap: "8px",
 		backgroundColor: "#1a1a2e",
-		padding: "12px",
-		borderRadius: "8px",
-		marginBottom: "16px",
-		flexWrap: "wrap",
+		borderRadius: 12,
+		padding: 24,
+		marginBottom: 16,
 	},
-	playingStatus: {
-		marginLeft: "auto",
-		fontSize: "0.9rem",
+	cardHeader: {
+		display: "flex",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	cardLabel: {
+		fontSize: "0.75rem",
+		fontWeight: 700,
+		letterSpacing: "0.08em",
 		color: "#888",
+		textTransform: "uppercase" as const,
+	},
+	statusBadge: {
+		display: "inline-flex",
+		alignItems: "center",
+		fontSize: "0.8rem",
+		fontWeight: 600,
+		padding: "4px 10px",
+		borderRadius: 20,
+	},
+	trackName: {
+		fontSize: "1.5rem",
+		fontWeight: 700,
+		lineHeight: 1.3,
+	},
+	artistName: {
+		fontSize: "1.1rem",
+		color: "#999",
+		marginTop: 4,
+	},
+	nowPlayingMeta: {
+		marginTop: 12,
+		fontSize: "0.85rem",
+		color: "#666",
+	},
+	sourceBadge: {
+		fontWeight: 600,
+	},
+	updatedText: {
+		color: "#555",
+	},
+	cardGrid: {
+		display: "flex",
+		gap: 16,
+		flexWrap: "wrap" as const,
+	},
+	halfCard: {
+		flex: "1 1 240px",
+		backgroundColor: "#1a1a2e",
+		borderRadius: 12,
+		padding: 20,
+		marginBottom: 16,
+		display: "flex",
+		flexDirection: "column" as const,
+		gap: 12,
+	},
+	connectionStatus: {
+		display: "flex",
+		alignItems: "center",
+		fontSize: "0.95rem",
+	},
+	hintText: {
+		color: "#666",
+		fontSize: "0.8rem",
+	},
+	smallButton: {
+		display: "inline-block",
+		backgroundColor: "#252542",
+		color: "#ccc",
+		padding: "5px 12px",
+		borderRadius: 6,
+		fontSize: "0.8rem",
+		textDecoration: "none",
+		border: "1px solid #333",
 	},
 	primaryButton: {
 		backgroundColor: "#1db954",
 		color: "white",
 		border: "none",
-		padding: "12px 24px",
-		fontSize: "1rem",
-		borderRadius: "6px",
+		padding: "10px 20px",
+		fontSize: "0.9rem",
+		borderRadius: 6,
 		cursor: "pointer",
-		fontWeight: "bold",
+		fontWeight: 600,
+		alignSelf: "flex-start" as const,
 	},
 	secondaryButton: {
-		backgroundColor: "#444",
-		color: "white",
-		border: "none",
-		padding: "12px 24px",
-		fontSize: "1rem",
-		borderRadius: "6px",
+		backgroundColor: "#252542",
+		color: "#ccc",
+		border: "1px solid #333",
+		padding: "10px 20px",
+		fontSize: "0.9rem",
+		borderRadius: 6,
 		cursor: "pointer",
+		fontWeight: 600,
 	},
 	dangerButton: {
-		backgroundColor: "#e53935",
-		color: "white",
-		border: "none",
-		padding: "12px 24px",
-		fontSize: "1rem",
-		borderRadius: "6px",
-		cursor: "pointer",
-	},
-	link: {
-		color: "#888",
-		background: "none",
-		border: "none",
-		cursor: "pointer",
-		textDecoration: "underline",
+		backgroundColor: "transparent",
+		color: "#e53935",
+		border: "1px solid #e53935",
+		padding: "10px 20px",
 		fontSize: "0.9rem",
-		display: "block",
-		textAlign: "center",
-		marginTop: "16px",
+		borderRadius: 6,
+		cursor: "pointer",
+		fontWeight: 600,
+		alignSelf: "flex-start" as const,
+	},
+	setupBar: {
+		backgroundColor: "#1a1a2e",
+		borderRadius: 12,
+		padding: "16px 20px",
+		marginBottom: 16,
+		display: "flex",
+		alignItems: "center",
+		gap: 16,
+		flexWrap: "wrap" as const,
+	},
+	setupSteps: {
+		display: "flex",
+		alignItems: "center",
+		gap: 0,
+		fontSize: "0.9rem",
+	},
+	setupStep: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: 4,
+	},
+	setupDot: {
+		margin: "0 10px",
+		color: "#444",
+	},
+	footer: {
+		display: "flex",
+		justifyContent: "center",
+		alignItems: "center",
+		padding: "24px 0 0",
+		marginTop: 8,
+	},
+	footerLink: {
+		color: "#666",
+		textDecoration: "none",
+		fontSize: "0.9rem",
+	},
+	footerDot: {
+		margin: "0 8px",
+		color: "#444",
 	},
 	successBanner: {
 		backgroundColor: "#1db954",
 		color: "white",
 		padding: "12px 16px",
-		borderRadius: "8px",
-		marginBottom: "16px",
-		textAlign: "center",
+		borderRadius: 8,
+		marginBottom: 16,
+		textAlign: "center" as const,
 	},
 	errorBanner: {
 		backgroundColor: "#e53935",
 		color: "white",
 		padding: "12px 16px",
-		borderRadius: "8px",
-		marginBottom: "16px",
-		textAlign: "center",
-	},
-	commands: {
-		backgroundColor: "#252542",
-		borderRadius: "12px",
-		padding: "20px",
-		marginBottom: "16px",
-		textAlign: "left",
+		borderRadius: 8,
+		marginBottom: 16,
+		textAlign: "center" as const,
 	},
 };

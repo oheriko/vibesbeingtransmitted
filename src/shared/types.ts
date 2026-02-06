@@ -69,6 +69,12 @@ export interface UserStatus {
 	} | null;
 }
 
+export interface DashboardStatus extends UserStatus {
+	lastSource: string | null;
+	lastUpdated: string | null;
+	hasExtensionToken: boolean;
+}
+
 export interface Config {
 	appUrl: string;
 	port: number;
