@@ -95,9 +95,8 @@ auth.get("/slack", async (c) => {
 			},
 		});
 
-	// Chain bot install into better-auth Slack sign-in so the user gets a session
-	const callbackURL = encodeURIComponent("/dashboard?installed=true");
-	return c.redirect(`/api/auth/signin/social?provider=slack&callbackURL=${callbackURL}`);
+	// Redirect to dashboard — the client will auto-trigger Slack sign-in if needed
+	return c.redirect("/dashboard?installed=true");
 });
 
 // Spotify OAuth - User connection flow

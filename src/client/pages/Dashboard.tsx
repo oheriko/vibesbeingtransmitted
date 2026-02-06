@@ -63,7 +63,13 @@ export function Dashboard() {
 			const interval = setInterval(fetchStatus, 10_000);
 			return () => clearInterval(interval);
 		}
-		if (!justInstalled && !spotifyConnected) {
+		if (justInstalled) {
+			// Just installed the Slack app — auto-trigger sign-in to create a session
+			authClient.signIn.social({
+				provider: "slack",
+				callbackURL: "/dashboard?installed=true",
+			});
+		} else if (!spotifyConnected) {
 			window.location.href = "/";
 		} else {
 			setLoading(false);
