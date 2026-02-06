@@ -395,7 +395,7 @@ const styles: Record<string, React.CSSProperties> = {
 		color: "#eee",
 		textDecoration: "none",
 		fontFamily: '"ZamenhofInline", serif',
-		fontSize: "1rem",
+		fontSize: "2rem",
 	},
 	navSignOut: {
 		background: "none",
