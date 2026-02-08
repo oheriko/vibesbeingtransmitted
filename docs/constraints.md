@@ -60,9 +60,11 @@
 - Token refresh must be handled gracefully
 
 ### Data Protection
-- Encryption at rest: Required for OAuth tokens
+- Encryption at rest: AES-256-GCM for OAuth tokens
+- Extension tokens: SHA-256 hashed (never stored raw)
 - Encryption in transit: TLS required
 - Minimal data retention: Only store what's needed for functionality
+- Rate limiting: Required on all public API endpoints
 
 ### Access Control
 - Users control their own sharing (opt-in)
@@ -89,11 +91,15 @@
 ## Known Limitations
 
 - **Spotify polling:** No webhooks available; must poll for playback state
+- **YouTube Music:** No official API; requires browser extension to scrape DOM
 - **Slack status length:** Limited character count for status text
 - **Slack status emoji:** Must be standard or pre-existing custom emoji; cannot dynamically set album art as emoji
 - **Premium vs Free:** Some Spotify features may differ by account type
+- **Source conflicts:** When both Spotify and YouTube Music are active, most recently used source wins with a 30s grace period
 
 ## Trade-offs Accepted
 
 - **Polling over push:** Spotify doesn't offer playback webhooks, so we accept polling delay
+- **DOM scraping for YouTube Music:** No API available, so extension observes DOM mutations
 - **Bun-only:** May limit library choices, but gains performance and simplicity
+- **In-memory rate limiting:** Resets on server restart, but sufficient for single-server deployment

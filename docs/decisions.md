@@ -11,6 +11,30 @@ Each decision includes:
 
 ## Decisions
 
+### 2026-02-08: Source priority — most recently active wins
+- **Commit:** `fc2dd92`
+- **Status:** Active
+- **Summary:** When both Spotify and YouTube Music are active, the Spotify poller defers for 30s after any YouTube Music extension update
+- **Rationale:** Prevents Slack status flickering between sources; whoever the user interacted with most recently keeps priority
+
+### 2026-02-06: Dashboard redesign with auto-refresh and connection management
+- **Commit:** `369bfe3`
+- **Status:** Active
+- **Summary:** Full dashboard rewrite with Now Playing hero card, connection cards for Spotify + YouTube Music, setup checklist, 10s auto-refresh
+- **Rationale:** Users need a data-rich control center, not just a simple status page
+
+### 2026-02-06: Security hardening — hashed tokens, rate limiting, input validation
+- **Commit:** `e53dcd4`
+- **Status:** Active
+- **Summary:** Extension tokens SHA-256 hashed, HMAC-signed state for OAuth CSRF, crypto.timingSafeEqual for Slack signatures, in-memory rate limiting, input validation on extension endpoint
+- **Rationale:** Defense in depth for production security
+
+### 2026-02-06: Client-side auth flow after Slack install
+- **Commit:** `6332e9f`
+- **Status:** Active
+- **Summary:** After Slack app install, redirect to dashboard which auto-triggers better-auth social sign-in client-side, instead of server-side redirect to better-auth endpoint
+- **Rationale:** better-auth's /signin/social only accepts POST; server redirect is GET
+
 ### 2026-02-05: www subdomain as canonical
 - **Commit:** `0fb6a11`
 - **Status:** Active

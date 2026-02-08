@@ -3,7 +3,9 @@
 Ideas for future development. Not prioritized yet.
 
 ## Core (MVP)
-- [ ] Spotify status in Slack - show currently playing track/artist
+- [x] Spotify status in Slack - show currently playing track/artist
+- [x] YouTube Music status in Slack - via browser extension (Chrome + Firefox)
+- [x] Web dashboard - auto-refreshing control center with now playing, connections, setup
 - [ ] Open in Spotify - teammates can click to open the music
 
 ## Social Discovery
@@ -25,7 +27,7 @@ Ideas for future development. Not prioritized yet.
 
 ## Platform Expansion
 - [ ] Apple Music support
-- [ ] YouTube Music support
+- [x] YouTube Music support (browser extension)
 - [ ] Tidal support
 - [ ] Slack Huddle integration - show music when in a huddle
 

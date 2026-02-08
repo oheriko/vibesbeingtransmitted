@@ -81,6 +81,7 @@ PORT=3000
 APP_URL=https://www.vibesbeingtransmitted.com
 DATABASE_PATH=/opt/vibes/vibes.db
 ENCRYPTION_KEY=<generate-32-byte-hex>
+BETTER_AUTH_SECRET=<generate-random-secret>
 
 SLACK_CLIENT_ID=<your-slack-client-id>
 SLACK_CLIENT_SECRET=<your-slack-client-secret>
@@ -203,6 +204,7 @@ Update your Slack/Spotify app settings with the tunnel URL.
 | `APP_URL` | Public URL of the app | Yes |
 | `DATABASE_PATH` | Path to SQLite database | No |
 | `ENCRYPTION_KEY` | 32-byte hex key for token encryption | Yes |
+| `BETTER_AUTH_SECRET` | Secret for better-auth session signing | Yes |
 | `SLACK_CLIENT_ID` | Slack app client ID | Yes |
 | `SLACK_CLIENT_SECRET` | Slack app client secret | Yes |
 | `SLACK_SIGNING_SECRET` | Slack request signing secret | Yes |

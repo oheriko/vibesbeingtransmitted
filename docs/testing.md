@@ -11,14 +11,19 @@
 ### Directory Layout
 ```
 src/
-  lib/
-    spotify.ts
-    spotify.test.ts         # Co-located unit tests
-  routes/
-    slack-events.ts
-    slack-events.test.ts    # Co-located tests
-tests/
-  integration/              # Integration tests (if needed)
+  server/
+    services/
+      crypto.ts
+      crypto.test.ts          # Co-located unit tests
+    routes/
+      extension.ts
+      extension.test.ts       # Co-located route tests
+    middleware/
+      rateLimit.ts
+      rateLimit.test.ts       # Co-located middleware tests
+  shared/
+    format.ts
+    format.test.ts            # Co-located shared tests
 ```
 
 ### Naming Conventions
